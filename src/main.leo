@@ -78,6 +78,31 @@ program privx_xyz.aleo {
         Mapping::set(balances, hash, current_amount - amount);
     }
 
+    transition deposit_token(t: token) {
+        let hash: field = BHP256::hash(t.owner);
+        return then finalize(hash, t.quantity);
+    }
+
+    finalize deposit_token(hash: field, quantity: u64) {
+        let current_amount: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_amount + quantity);
+    }
+
+    transition withdraw_token(quantity: u64) -> token {
+        let hash: field = BHP256::hash(self.caller);
+        let t: token = token {
+            owner: self.caller,
+            gates: 0u64,
+            quantity: quantity,
+        };
+        return t then finalize(hash, quantity);
+    }
+
+    finalize withdraw_token(hash: field, quantity: u64) {
+        let current_amount: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_amount - quantity);
+    }
+
     transition buy(quantity: u64, price: u64) -> Order {
         let order: Order = new_order(quantity, price, true);
         return then finalize(order.owner_hash, quantity, price);
@@ -90,13 +115,15 @@ program privx_xyz.aleo {
         Mapping::set(locked, hash, locked_amount + quantity * price);
     }
 
-    transition sell(t: token, price: u64) {
-        let order: Order = new_order(t.quantity, price, false);
-        return then finalize(order.owner_hash, t.quantity, price);
+    transition sell(quantity: u64, price: u64) {
+        let order: Order = new_order(quantity, price, false);
+        return then finalize(order.owner_hash, quantity, price);
     }
 
     finalize sell(hash: field, quantity: u64, price: u64) {
-        let current_quantity: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
+        let current_quantity: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_quantity - quantity);
+        let locked_quantity: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
         Mapping::set(token_locked, hash, current_quantity + quantity);
     }
     transition cancel(id: u64) {
@@ -210,6 +237,9 @@ program privx_xyz.aleo {
     }
 
     inline modify_order_quantity(order: Order, quantity: u64) -> Order {
+        if order.quantity == quantity {
+            return finish_order(order);
+        }
         return Order {
             owner_hash: order.owner_hash,
             is_buy: order.is_buy,
