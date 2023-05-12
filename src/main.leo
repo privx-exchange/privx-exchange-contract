@@ -104,8 +104,8 @@ program privx_xyz.aleo {
     }
 
     transition buy(quantity: u64, price: u64) -> Order {
-        let order: Order = new_order(quantity, price, true);
-        return then finalize(order.owner_hash, quantity, price);
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity, price);
     }
 
     finalize buy(hash: field, quantity: u64, price: u64) {
@@ -113,11 +113,24 @@ program privx_xyz.aleo {
         Mapping::set(balances, hash, current_amount - quantity * price);
         let locked_amount: u64 = Mapping::get_or_init(locked, hash, 0u64);
         Mapping::set(locked, hash, locked_amount + quantity * price);
+
+        let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
+        Mapping::set(sequence, 0u64, next_id + 1u64);
+        let order: Order = Order {
+            owner_hash: hash,
+            is_buy: true,
+            quantity: quantity,
+            dealed_quantity: 0u64,
+            price: price,
+            status: 0u8,
+        };
+        // let order: Order = new_order(hash, quantity, price, true);
+        Mapping::set(orders, next_id, order);
     }
 
     transition sell(quantity: u64, price: u64) {
-        let order: Order = new_order(quantity, price, false);
-        return then finalize(order.owner_hash, quantity, price);
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity, price);
     }
 
     finalize sell(hash: field, quantity: u64, price: u64) {
@@ -125,6 +138,19 @@ program privx_xyz.aleo {
         Mapping::set(token_balances, hash, current_quantity - quantity);
         let locked_quantity: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
         Mapping::set(token_locked, hash, current_quantity + quantity);
+
+        let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
+        Mapping::set(sequence, 0u64, next_id + 1u64);
+        let order: Order = Order {
+            owner_hash: hash,
+            is_buy: false,
+            quantity: quantity,
+            dealed_quantity: 0u64,
+            price: price,
+            status: 0u8,
+        };
+        // let order: Order = new_order(hash, quantity, price, false);
+        Mapping::set(orders, next_id, order);
     }
     transition cancel(id: u64) {
         let hash: field = BHP256::hash(self.caller);
@@ -202,16 +228,15 @@ program privx_xyz.aleo {
         Mapping::set(token_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
     }
 
-    function new_order(amount: u64, price: u64, is_buy: bool) -> Order {
-        let order: Order = Order {
-            owner_hash: BHP256::hash(self.caller),
+    inline new_order(hash: field, amount: u64, price: u64, is_buy: bool) -> Order {
+        return Order {
+            owner_hash: hash,
             is_buy: is_buy,
             quantity: amount,
             dealed_quantity: 0u64,
             price: price,
             status: 0u8,
         };
-        return order;
     }
 
     inline cancel_order(order: Order) -> Order {
