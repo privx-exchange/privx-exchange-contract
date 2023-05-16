@@ -18,12 +18,16 @@ You can trade in privx, which protects your privacy!
 
 ### Buyer
 1.The buyer can `deposit` credits into their `balance`
+
 2.The buyer can then place orders using the `buy` which will create a `orderId`
+
 3.The buyer can `cancel` the order
 
 ### Seller
 1.The seller can `deposit_token` token into their `token_balance`
+
 2.The seller can then place orders using the `sell` which will create a `orderId`
+
 3.The seller can `cancel` the order
 
 ### Server
