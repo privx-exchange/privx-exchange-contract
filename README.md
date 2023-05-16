@@ -1,5 +1,9 @@
 # privx-xyz-contract
 
+Privx.xyz is a zkp-based decentralized order book service on Aleo platfrom. Comparing to previous works on other platforms, Privx.xyz aims to provide better user privacy protection.
+
+We are still in developing stage & will publish plan and roadmap recently. Feel free to contact us via email: privx.xyz.lab@gmail.com, in case of any questions. Thanks for your interest!
+
 ## Build Guide
 
 To compile this Aleo program, run:
