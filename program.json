@@ -1,0 +1,10 @@
+{
+    "program": "privx_xyz.aleo",
+    "version": "0.0.0",
+    "description": "",
+    "development": {
+        "private_key": "APrivateKey1zkp6sZKgxrkduTcQWZZQVUtM19Y3kcxFMiBaryYwUmvnvJX",
+        "address": "aleo1zv6ykzmj70d2gmuhjsqwzu202excasw7wgrk7nun37vte99nmvrqf6dcf6"
+    },
+    "license": "MIT"
+}
