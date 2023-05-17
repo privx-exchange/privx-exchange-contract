@@ -6,6 +6,7 @@ program privx_xyz.aleo {
     record credits {
         owner: address,
         gates: u64,
+        quantity: u64
     }
 
     // Represent any token to exchange
@@ -43,8 +44,17 @@ program privx_xyz.aleo {
 
     // Mint token
     transition mint(to: address, quantity: u64) -> token{
-        assert_eq(self.caller, aleo1t0uer3jgtsgmx5tq6x6f9ecu8tr57rzzfnc2dgmcqldceal0ls9qf6st7a);
+        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
         return token {
+            owner: to,
+            gates: 0u64,
+            quantity: quantity,
+        };
+    }
+
+    transition mint_credits(to: address, quantity: u64) -> credits {
+        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+        return credits {
             owner: to,
             gates: 0u64,
             quantity: quantity,
@@ -55,7 +65,7 @@ program privx_xyz.aleo {
     transition deposit(c: credits) {
         let hash: field = BHP256::hash(c.owner);
         // TODO: Need to support save credits in mapping
-        return then finalize(hash, c.gates);
+        return then finalize(hash, c.quantity);
     }
 
     finalize deposit(hash: field, amount: u64) {
@@ -67,7 +77,8 @@ program privx_xyz.aleo {
     transition withdraw(amount: u64) -> credits{
         let c: credits = credits {
             owner: self.caller,
-            gates: amount,
+            gates: 0u64,
+            quantity: amount,
         };
         let hash: field = BHP256::hash(self.caller);
         return c then finalize(hash, amount);
