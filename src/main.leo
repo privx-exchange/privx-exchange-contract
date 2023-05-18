@@ -201,6 +201,7 @@ program privx_xyz.aleo {
     }
 
     finalize knockdown(buy_id: u64, sell_id: u64) {
+        let caller_hash: field = BHP256::hash(self.caller);
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // Ensure orders is available
@@ -211,32 +212,42 @@ program privx_xyz.aleo {
         assert(buy_order.price >= sell_order.price);
         let dealed_quantity: u64 = 0u64;
         let dealed_price: u64 = sell_order.price;
-        let dealed_amount: u64 = dealed_price * dealed_quantity;
         if buy_order.quantity >= sell_order.quantity {
             dealed_quantity = sell_order.quantity;
         } else {
             dealed_quantity = buy_order.quantity;
         }
+        let dealed_amount: u64 = dealed_price * dealed_quantity;
+
+        // Update orders' status
         let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
         let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
-        // Update orders' status
         Mapping::set(orders, buy_id, dealed_buy_order);
         Mapping::set(orders, sell_id, dealed_sell_order);
 
+        // Get the locked credits and token
         let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
         let seller_locked_credits: u64 = Mapping::get_or_init(credits_balances, sell_order.owner_hash, 0u64);
 
         let buyer_locked_token: u64 = Mapping::get_or_init(token_locked, buy_order.owner_hash, 0u64);
         let seller_locked_token: u64 = Mapping::get_or_init(token_balances, sell_order.owner_hash, 0u64);
 
+        let caller_credits: u64 = Mapping::get_or_init(credits_balances, caller_hash, 0u64);
+        let caller_token: u64 = Mapping::get_or_init(token_balances, caller_hash, 0u64);
 
         // Buyer decrease the locked credist and increase the token
+        // Fees are collected in the form of tokens
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
         Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - dealed_amount);
-        Mapping::set(token_balances, buy_order.owner_hash, buyer_locked_token + dealed_quantity);
+        Mapping::set(token_balances, buy_order.owner_hash, buyer_locked_token + real_quantity);
+        Mapping::set(token_balances, caller_hash, caller_token + token_fee);
 
         // Seller increase the available credits and decrease the locked token
-        Mapping::set(credits_balances, sell_order.owner_hash, seller_locked_credits + dealed_amount);
+        // Fees are collected in the form of credits
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
         Mapping::set(token_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        Mapping::set(credits_balances, sell_order.owner_hash, seller_locked_credits + real_amount);
+        Mapping::set(credits_balances, caller_hash, caller_credits + credits_fee);
     }
 
     inline new_order(hash: field, amount: u64, price: u64, is_buy: bool) -> Order {
@@ -284,5 +295,15 @@ program privx_xyz.aleo {
             price: order.price,
             status: order.status,
         };
+    }
+
+    inline charge_fee(dealed_amount: u64) -> (u64, u64) {
+        // 1‰
+        let fee: u64 = dealed_amount / 1000u64 * 1u64;
+        if fee == 0u64 {
+            fee = 1u64;
+        }
+        let real_amount: u64 = dealed_amount - fee;
+        return (real_amount, fee);
     }
 }
