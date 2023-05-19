@@ -240,7 +240,7 @@ program privx_xyz.aleo {
             dealed_quantity = buy_order.quantity;
         }
         let dealed_amount: u64 = dealed_price * dealed_quantity;
-
+        let buyer_unlocked_amount: u64 = buy_order.price * dealed_quantity;
         // Update orders' status
         let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
         let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
@@ -257,10 +257,10 @@ program privx_xyz.aleo {
         let caller_credits: u64 = Mapping::get_or_init(credits_balances, caller_hash, 0u64);
         let caller_token: u64 = Mapping::get_or_init(token_balances, caller_hash, 0u64);
 
-        // Buyer decrease the locked credist and increase the token
+        // Buyer decrease the locked credits and increase the token
         // Fees are collected in the form of tokens
         let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
-        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - dealed_amount);
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - buyer_unlocked_amount);
         Mapping::set(token_balances, buy_order.owner_hash, buyer_current_token + real_quantity);
         Mapping::set(token_balances, caller_hash, caller_token + token_fee);
 
