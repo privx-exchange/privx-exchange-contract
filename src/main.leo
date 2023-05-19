@@ -272,11 +272,11 @@ program privx_xyz.aleo {
         Mapping::set(credits_balances, caller_hash, caller_credits + credits_fee);
     }
 
-    inline new_order(hash: field, amount: u64, price: u64, is_buy: bool) -> Order {
+    inline new_order(hash: field, quantity: u64, price: u64, is_buy: bool) -> Order {
         return Order {
             owner_hash: hash,
             is_buy: is_buy,
-            quantity: amount,
+            quantity: quantity,
             dealed_quantity: 0u64,
             price: price,
             status: 0u8,
