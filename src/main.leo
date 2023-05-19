@@ -6,6 +6,7 @@ program privx_xyz.aleo {
     record credits {
         owner: address,
         gates: u64,
+        quantity: u64
     }
 
     // Represent any token to exchange
@@ -28,9 +29,9 @@ program privx_xyz.aleo {
     }
 
     // Balance of credits.aleo
-    mapping balances: field => u64;
+    mapping credits_balances: field => u64;
     // Locked balance of credits.aleo
-    mapping locked: field => u64;
+    mapping credits_locked: field => u64;
 
     // Balance of token stored on chain
     mapping token_balances: field => u64;
@@ -42,8 +43,8 @@ program privx_xyz.aleo {
     mapping sequence: u64 => u64;
 
     // Mint token
-    transition mint(to: address, quantity: u64) -> token{
-        assert_eq(self.caller, aleo1t0uer3jgtsgmx5tq6x6f9ecu8tr57rzzfnc2dgmcqldceal0ls9qf6st7a);
+    transition mint_token(to: address, quantity: u64) -> token{
+        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
         return token {
             owner: to,
             gates: 0u64,
@@ -51,31 +52,41 @@ program privx_xyz.aleo {
         };
     }
 
-    // Deposit credits on the program
-    transition deposit(c: credits) {
-        let hash: field = BHP256::hash(c.owner);
-        // TODO: Need to support save credits in mapping
-        return then finalize(hash, c.gates);
+    transition mint_credits(to: address, quantity: u64) -> credits {
+        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+        return credits {
+            owner: to,
+            gates: 0u64,
+            quantity: quantity,
+        };
     }
 
-    finalize deposit(hash: field, amount: u64) {
-        let current_amount: u64 = Mapping::get_or_init(balances, hash, 0u64);
-        Mapping::set(balances, hash, current_amount + amount);
+    // Deposit credits on the program
+    transition deposit_credits(c: credits) {
+        let hash: field = BHP256::hash(c.owner);
+        // TODO: Need to support save credits in mapping
+        return then finalize(hash, c.quantity);
+    }
+
+    finalize deposit_credits(hash: field, amount: u64) {
+        let current_amount: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+        Mapping::set(credits_balances, hash, current_amount + amount);
     }
 
     // With draw credits stored on the program
-    transition withdraw(amount: u64) -> credits{
+    transition withdraw_credits(amount: u64) -> credits{
         let c: credits = credits {
             owner: self.caller,
-            gates: amount,
+            gates: 0u64,
+            quantity: amount,
         };
         let hash: field = BHP256::hash(self.caller);
         return c then finalize(hash, amount);
     }
 
-    finalize withdraw(hash: field, amount: u64) {
-        let current_amount: u64 = Mapping::get_or_init(balances, hash, 0u64);
-        Mapping::set(balances, hash, current_amount - amount);
+    finalize withdraw_credits(hash: field, amount: u64) {
+        let current_amount: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+        Mapping::set(credits_balances, hash, current_amount - amount);
     }
 
     transition deposit_token(t: token) {
@@ -109,10 +120,10 @@ program privx_xyz.aleo {
     }
 
     finalize buy(hash: field, quantity: u64, price: u64) {
-        let current_amount: u64 = Mapping::get_or_init(balances, hash, 0u64);
-        Mapping::set(balances, hash, current_amount - quantity * price);
-        let locked_amount: u64 = Mapping::get_or_init(locked, hash, 0u64);
-        Mapping::set(locked, hash, locked_amount + quantity * price);
+        let current_amount: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+        Mapping::set(credits_balances, hash, current_amount - quantity * price);
+        let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+        Mapping::set(credits_locked, hash, locked_amount + quantity * price);
 
         let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
         Mapping::set(sequence, 0u64, next_id + 1u64);
@@ -172,10 +183,10 @@ program privx_xyz.aleo {
         // If the canceled order is buy order, return the locked credits
         // If the canceled order is sell order, return the locked token
         if order.is_buy == true {
-            let locked_amount: u64 = Mapping::get_or_init(locked, hash, 0u64);
-            Mapping::set(locked, hash, locked_amount - order.quantity * order.price);
-            let current_amount: u64 = Mapping::get_or_init(balances, hash, 0u64);
-            Mapping::set(balances, hash, current_amount + order.quantity * order.price);
+            let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+            Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+            let current_amount: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+            Mapping::set(credits_balances, hash, current_amount + order.quantity * order.price);
         }
         else {
             let locked_amount: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
@@ -212,19 +223,19 @@ program privx_xyz.aleo {
         Mapping::set(orders, buy_id, dealed_buy_order);
         Mapping::set(orders, sell_id, dealed_sell_order);
 
-        let buyer_locked_credits: u64 = Mapping::get_or_init(locked, buy_order.owner_hash, 0u64);
-        let seller_locked_credits: u64 = Mapping::get_or_init(balances, sell_order.owner_hash, 0u64);
+        let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
+        let seller_locked_credits: u64 = Mapping::get_or_init(credits_balances, sell_order.owner_hash, 0u64);
 
         let buyer_locked_token: u64 = Mapping::get_or_init(token_locked, buy_order.owner_hash, 0u64);
         let seller_locked_token: u64 = Mapping::get_or_init(token_balances, sell_order.owner_hash, 0u64);
 
 
         // Buyer decrease the locked credist and increase the token
-        Mapping::set(locked, buy_order.owner_hash, buyer_locked_credits - dealed_amount);
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - dealed_amount);
         Mapping::set(token_balances, buy_order.owner_hash, buyer_locked_token + dealed_quantity);
 
         // Seller increase the available credits and decrease the locked token
-        Mapping::set(balances, sell_order.owner_hash, seller_locked_credits + dealed_amount);
+        Mapping::set(credits_balances, sell_order.owner_hash, seller_locked_credits + dealed_amount);
         Mapping::set(token_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
     }
 
