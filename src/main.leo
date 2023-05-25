@@ -45,7 +45,7 @@ program privx_xyz.aleo {
 
     /* Mint */
     // transition mint_token(to: address, quantity: u64) -> token {
-    //     assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+    //     assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
     //     return token {
     //         owner: to,
     //         gates: 0u64,
@@ -54,7 +54,7 @@ program privx_xyz.aleo {
     // }
 
     transition mint_token_public(to: address, quantity: u64) {
-        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+        assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
         let hash: field = BHP256::hash(to);
         return then finalize(hash, quantity);
     }
@@ -65,7 +65,7 @@ program privx_xyz.aleo {
     }
 
     // transition mint_credits(to: address, quantity: u64) -> credits {
-    //     assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+    //     assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
     //     return credits {
     //         owner: to,
     //         gates: 0u64,
@@ -74,7 +74,7 @@ program privx_xyz.aleo {
     // }
 
     transition mint_credits_public(to: address, quantity: u64) {
-        assert_eq(self.caller, aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px);
+        assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
         let hash: field = BHP256::hash(to);
         return then finalize(hash, quantity);
     }
