@@ -92,9 +92,9 @@ program privx_xyz.aleo {
 
     finalize deposit_credits(hash: field, amount: u64) {
         let current_balance: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
-        let current_depoisted: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);    
+        let current_deposited: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);    
         Mapping::set(credits_balances, hash, current_balance - amount);
-        Mapping::set(credits_deposited, hash, current_depoisted + amount);
+        Mapping::set(credits_deposited, hash, current_deposited + amount);
     }
 
     // Withdraw credits stored on the dex
@@ -105,9 +105,9 @@ program privx_xyz.aleo {
 
     finalize withdraw_credits(hash: field, amount: u64) {
         let current_balance: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
-        let current_depoisted: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
+        let current_deposited: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
         Mapping::set(credits_balances, hash, current_balance + amount);
-        Mapping::set(credits_deposited, hash, current_depoisted - amount);
+        Mapping::set(credits_deposited, hash, current_deposited - amount);
     }
 
     transition deposit_token(quantity: u64) {
