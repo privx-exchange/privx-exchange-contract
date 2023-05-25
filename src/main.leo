@@ -227,6 +227,8 @@ program privx_xyz.aleo {
         // Ensure orders is available
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
+        assert_eq(buy_order.is_buy, true);
+        assert_eq(sell_order.is_buy, false);
 
         // Assert the buy price >= sell price
         assert(buy_order.price >= sell_order.price);
