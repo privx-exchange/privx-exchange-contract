@@ -14,7 +14,7 @@ aleo build
 ## Intruduction
 You can trade in privx, which protects your privacy!
 
-![image](https://user-images.githubusercontent.com/53888545/238601232-53786b4b-05cd-42ac-bdee-52892a6c2318.png)
+![image](https://cdn.jsdelivr.net/gh/ghostant-1017/img@main/img/image-20230605165056859.png)
 
 ### Buyer
 1.The buyer can `deposit` credits into their `balance`
