@@ -1,6 +1,6 @@
-// The 'zkdex' program.
+// The 'privx_exchange' program.
 
-program privx_xyz.aleo {
+program privx_exchange.aleo {
 
     // // Represent credits.aleo/credits
     // record credits {
