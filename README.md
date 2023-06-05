@@ -1,8 +1,8 @@
-# privx-xyz-contract
+# privx-exchange-contract
 
-Privx.xyz is a zkp-based decentralized order book service on Aleo platfrom. Comparing to previous works on other platforms, Privx.xyz aims to provide better user privacy protection.
+Privx.exchange is a zkp-based decentralized order book service on Aleo platfrom. Comparing to previous works on other platforms, Privx.exchange aims to provide better user privacy protection.
 
-We are still in developing stage & will publish plan and roadmap recently. Feel free to contact us via email: privx.xyz.lab@gmail.com, in case of any questions. Thanks for your interest!
+We are still in developing stage & will publish plan and roadmap recently. Feel free to contact us via email: privx.exchange.lab@gmail.com, in case of any questions. Thanks for your interest!
 
 ## Build Guide
 
