@@ -19,7 +19,7 @@ program privx_exchange.aleo {
     struct Order {
         owner_hash: field,
         is_buy: bool,
-        tt: u64,
+        token_type: u64,
         quantity: u64,
         dealed_quantity: u64
         price: u64,
@@ -190,7 +190,7 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
-            tt: 1u64,
+            token_type: 1u64,
             is_buy: true,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -216,7 +216,7 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
-            tt: 2u64,
+            token_type: 2u64,
             is_buy: true,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -242,7 +242,7 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
-            tt: 1u64,
+            token_type: 1u64,
             is_buy: false,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -268,7 +268,7 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
-            tt: 2u64,
+            token_type: 2u64,
             is_buy: false,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -321,7 +321,7 @@ program privx_exchange.aleo {
         let order: Order = Mapping::get(orders, id);
         // Ensure is the correct owner
         // Ensure the order is available
-        assert_eq(order.tt, 1u64);
+        assert_eq(order.token_type, 1u64);
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
         assert_eq(order.is_buy, false);
@@ -347,7 +347,7 @@ program privx_exchange.aleo {
         let order: Order = Mapping::get(orders, id);
         // Ensure is the correct owner
         // Ensure the order is available
-        assert_eq(order.tt, 1u64);
+        assert_eq(order.token_type, 1u64);
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
         assert_eq(order.is_buy, true);
@@ -372,7 +372,7 @@ program privx_exchange.aleo {
         let order: Order = Mapping::get(orders, id);
         // Ensure is the correct owner
         // Ensure the order is available
-        assert_eq(order.tt, 2u64);
+        assert_eq(order.token_type, 2u64);
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
         assert_eq(order.is_buy, false);
@@ -398,7 +398,7 @@ program privx_exchange.aleo {
         let order: Order = Mapping::get(orders, id);
         // Ensure is the correct owner
         // Ensure the order is available
-        assert_eq(order.tt, 2u64);
+        assert_eq(order.token_type, 2u64);
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
         assert_eq(order.is_buy, true);
@@ -422,8 +422,8 @@ program privx_exchange.aleo {
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // Ensure orders is available
-        assert_eq(buy_order.tt, 1u64);
-        assert_eq(sell_order.tt, 1u64);
+        assert_eq(buy_order.token_type, 1u64);
+        assert_eq(sell_order.token_type, 1u64);
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
         assert_eq(buy_order.is_buy, true);
@@ -482,8 +482,8 @@ program privx_exchange.aleo {
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // Ensure orders is available
-        assert_eq(buy_order.tt, 2u64);
-        assert_eq(sell_order.tt, 2u64);
+        assert_eq(buy_order.token_type, 2u64);
+        assert_eq(sell_order.token_type, 2u64);
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
         assert_eq(buy_order.is_buy, true);
@@ -533,10 +533,10 @@ program privx_exchange.aleo {
         Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
     }
 
-    inline new_order(hash: field,tt: u64, quantity: u64, price: u64, is_buy: bool) -> Order {
+    inline new_order(hash: field,token_type: u64, quantity: u64, price: u64, is_buy: bool) -> Order {
         return Order {
             owner_hash: hash,
-            tt: tt,
+            token_type: token_type,
             is_buy: is_buy,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -548,7 +548,7 @@ program privx_exchange.aleo {
     inline cancel_order(order: Order) -> Order {
         return Order {
             owner_hash: order.owner_hash,
-            tt: order.tt,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: order.quantity,
             dealed_quantity: order.dealed_quantity,
@@ -560,7 +560,7 @@ program privx_exchange.aleo {
     inline finish_order(order: Order) -> Order {
         return Order {
             owner_hash: order.owner_hash,
-            tt: order.tt,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: 0u64,
             dealed_quantity: order.dealed_quantity + order.quantity,
@@ -575,7 +575,7 @@ program privx_exchange.aleo {
         }
         return Order {
             owner_hash: order.owner_hash,
-            tt: order.tt,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: order.quantity - quantity,
             dealed_quantity: order.dealed_quantity + quantity,
