@@ -19,6 +19,7 @@ program privx_exchange.aleo {
     struct Order {
         owner_hash: field,
         is_buy: bool,
+        token_type: u64,
         quantity: u64,
         dealed_quantity: u64
         price: u64,
@@ -37,6 +38,11 @@ program privx_exchange.aleo {
     mapping token_balances: field => u64;
     mapping token_deposited: field => u64;
     mapping token_locked: field => u64;
+
+    mapping token2_balances: field => u64;
+    mapping token2_deposited: field => u64;
+    mapping token2_locked: field => u64;
+
 
     mapping orders: u64 => Order;
 
@@ -62,6 +68,17 @@ program privx_exchange.aleo {
     finalize mint_token_public(hash: field, quantity: u64) {
         let current_quantity: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
         Mapping::set(token_balances, hash, current_quantity + quantity);
+    }
+
+    transition mint_token2_public(to: address, quantity: u64) {
+        assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
+        let hash: field = BHP256::hash(to);
+        return then finalize(hash, quantity);
+    }
+    
+    finalize mint_token2_public(hash: field, quantity: u64) {
+        let current_quantity: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
+        Mapping::set(token2_balances, hash, current_quantity + quantity);
     }
 
     // transition mint_credits(to: address, quantity: u64) -> credits {
@@ -122,6 +139,18 @@ program privx_exchange.aleo {
         Mapping::set(token_deposited, hash, current_deposited + quantity);
     }
 
+    transition deposit_token2(quantity: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity);
+    }
+
+    finalize deposit_token2(hash: field, quantity: u64) {
+        let current_balance: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
+        let current_deposited: u64 = Mapping::get_or_init(token2_deposited, hash, 0u64);
+        Mapping::set(token2_balances, hash, current_balance - quantity);
+        Mapping::set(token2_deposited, hash, current_deposited + quantity);
+    }
+
     transition withdraw_token(quantity: u64) {
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, quantity);
@@ -132,6 +161,18 @@ program privx_exchange.aleo {
         let current_deposited: u64 = Mapping::get_or_init(token_deposited, hash, 0u64);
         Mapping::set(token_balances, hash, current_balance + quantity);
         Mapping::set(token_deposited, hash, current_deposited - quantity);
+    }
+
+    transition withdraw_token2(quantity: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity);
+    }
+
+    finalize withdraw_token2(hash: field, quantity: u64) {
+        let current_balance: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
+        let current_deposited: u64 = Mapping::get_or_init(token2_deposited, hash, 0u64);
+        Mapping::set(token2_balances, hash, current_balance + quantity);
+        Mapping::set(token2_deposited, hash, current_deposited - quantity);
     }
 
     transition buy(quantity: u64, price: u64) -> Order {
@@ -149,6 +190,33 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
+            token_type: 1u64,
+            is_buy: true,
+            quantity: quantity,
+            dealed_quantity: 0u64,
+            price: price,
+            status: 0u8,
+        };
+        // let order: Order = new_order(hash, quantity, price, true);
+        Mapping::set(orders, next_id, order);
+    }
+
+    transition buy_2(quantity: u64, price: u64) -> Order {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity, price);
+    }
+
+    finalize buy_2(hash: field, quantity: u64, price: u64) {
+        let current_deposited: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
+        Mapping::set(credits_deposited, hash, current_deposited - quantity * price);
+        let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+        Mapping::set(credits_locked, hash, locked_amount + quantity * price);
+
+        let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
+        Mapping::set(sequence, 0u64, next_id + 1u64);
+        let order: Order = Order {
+            owner_hash: hash,
+            token_type: 2u64,
             is_buy: true,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -174,6 +242,7 @@ program privx_exchange.aleo {
         Mapping::set(sequence, 0u64, next_id + 1u64);
         let order: Order = Order {
             owner_hash: hash,
+            token_type: 1u64,
             is_buy: false,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -183,18 +252,79 @@ program privx_exchange.aleo {
         // let order: Order = new_order(hash, quantity, price, false);
         Mapping::set(orders, next_id, order);
     }
-    transition cancel(id: u64) {
+
+    transition sell_2(quantity: u64, price: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, quantity, price);
+    }
+
+    finalize sell_2(hash: field, quantity: u64, price: u64) {
+        let current_deposited: u64 = Mapping::get_or_init(token2_deposited, hash, 0u64);
+        Mapping::set(token2_deposited, hash, current_deposited - quantity);
+        let locked_quantity: u64 = Mapping::get_or_init(token2_locked, hash, 0u64);
+        Mapping::set(token2_locked, hash, locked_quantity + quantity);
+
+        let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
+        Mapping::set(sequence, 0u64, next_id + 1u64);
+        let order: Order = Order {
+            owner_hash: hash,
+            token_type: 2u64,
+            is_buy: false,
+            quantity: quantity,
+            dealed_quantity: 0u64,
+            price: price,
+            status: 0u8,
+        };
+        // let order: Order = new_order(hash, quantity, price, false);
+        Mapping::set(orders, next_id, order);
+    }
+
+    // transition cancel(id: u64) {
+    //     let hash: field = BHP256::hash(self.caller);
+    //     return then finalize(hash, id);
+    // }
+
+    // finalize cancel(hash: field, id: u64) {
+    //     let order: Order = Mapping::get(orders, id);
+    //     // Ensure is the correct owner
+    //     // Ensure the order is available
+    //     assert_eq(order.owner_hash, hash);
+    //     assert_eq(order.status, 0u8);
+
+
+    //     // Modify order's status
+    //     let canceled_order: Order = cancel_order(order);
+    //     Mapping::set(orders, id, canceled_order);
+
+    //     // If the canceled order is buy order, return the locked credits
+    //     // If the canceled order is sell order, return the locked token
+    //     if order.is_buy == true {
+    //         let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+    //         Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+    //         let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
+    //         Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
+    //     }
+    //     else {
+    //         let locked_amount: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
+    //         Mapping::set(token_locked, hash, locked_amount - order.quantity);
+    //         let deposited_amount: u64 = Mapping::get_or_init(token_deposited, hash, 0u64);
+    //         Mapping::set(token_balances, hash, deposited_amount + order.quantity);
+    //     }
+    // }
+
+    transition cancel_sell(id: u64) {
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, id);
     }
 
-    finalize cancel(hash: field, id: u64) {
+    finalize cancel_sell(hash: field, id: u64) {
         let order: Order = Mapping::get(orders, id);
         // Ensure is the correct owner
         // Ensure the order is available
+        assert_eq(order.token_type, 1u64);
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
-
+        assert_eq(order.is_buy, false);
 
         // Modify order's status
         let canceled_order: Order = cancel_order(order);
@@ -202,18 +332,85 @@ program privx_exchange.aleo {
 
         // If the canceled order is buy order, return the locked credits
         // If the canceled order is sell order, return the locked token
-        if order.is_buy == true {
-            let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
-            Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
-            let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
-            Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
-        }
-        else {
-            let locked_amount: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
-            Mapping::set(token_locked, hash, locked_amount - order.quantity);
-            let deposited_amount: u64 = Mapping::get_or_init(token_deposited, hash, 0u64);
-            Mapping::set(token_balances, hash, deposited_amount + order.quantity);
-        }
+        let locked_amount: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
+        Mapping::set(token_locked, hash, locked_amount - order.quantity);
+        let deposited_amount: u64 = Mapping::get_or_init(token_deposited, hash, 0u64);
+        Mapping::set(token_balances, hash, deposited_amount + order.quantity);
+    }
+
+    transition cancel_buy(id: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, id);
+    }
+
+    finalize cancel_buy(hash: field, id: u64) {
+        let order: Order = Mapping::get(orders, id);
+        // Ensure is the correct owner
+        // Ensure the order is available
+        assert_eq(order.token_type, 1u64);
+        assert_eq(order.owner_hash, hash);
+        assert_eq(order.status, 0u8);
+        assert_eq(order.is_buy, true);
+
+        // Modify order's status
+        let canceled_order: Order = cancel_order(order);
+        Mapping::set(orders, id, canceled_order);
+        
+        let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+        Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+        let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
+        Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
+    }
+
+
+    transition cancel_sell_2(id: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, id);
+    }
+
+    finalize cancel_sell_2(hash: field, id: u64) {
+        let order: Order = Mapping::get(orders, id);
+        // Ensure is the correct owner
+        // Ensure the order is available
+        assert_eq(order.token_type, 2u64);
+        assert_eq(order.owner_hash, hash);
+        assert_eq(order.status, 0u8);
+        assert_eq(order.is_buy, false);
+
+        // Modify order's status
+        let canceled_order: Order = cancel_order(order);
+        Mapping::set(orders, id, canceled_order);
+
+        // If the canceled order is buy order, return the locked credits
+        // If the canceled order is sell order, return the locked token
+        let locked_amount: u64 = Mapping::get_or_init(token2_locked, hash, 0u64);
+        Mapping::set(token2_locked, hash, locked_amount - order.quantity);
+        let deposited_amount: u64 = Mapping::get_or_init(token2_deposited, hash, 0u64);
+        Mapping::set(token2_balances, hash, deposited_amount + order.quantity);
+    }
+
+    transition cancel_buy2(id: u64) {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash, id);
+    }
+
+    finalize cancel_buy2(hash: field, id: u64) {
+        let order: Order = Mapping::get(orders, id);
+        // Ensure is the correct owner
+        // Ensure the order is available
+        assert_eq(order.token_type, 2u64);
+        assert_eq(order.owner_hash, hash);
+        assert_eq(order.status, 0u8);
+        assert_eq(order.is_buy, true);
+
+        // Modify order's status
+        let canceled_order: Order = cancel_order(order);
+        Mapping::set(orders, id, canceled_order);
+        
+        let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
+        Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+        let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
+        Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
     }
 
     transition knockdown(buy_id: u64, sell_id: u64) {
@@ -225,6 +422,8 @@ program privx_exchange.aleo {
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // Ensure orders is available
+        assert_eq(buy_order.token_type, 1u64);
+        assert_eq(sell_order.token_type, 1u64);
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
         assert_eq(buy_order.is_buy, true);
@@ -274,9 +473,70 @@ program privx_exchange.aleo {
         Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
     }
 
-    inline new_order(hash: field, quantity: u64, price: u64, is_buy: bool) -> Order {
+    transition knockdown_2(buy_id: u64, sell_id: u64) {
+        let caller_hash: field = BHP256::hash(self.caller);
+        return then finalize(caller_hash, buy_id, sell_id);
+    }
+
+    finalize knockdown_2(caller_hash: field, buy_id: u64, sell_id: u64) {
+        let buy_order: Order = Mapping::get(orders, buy_id);
+        let sell_order: Order = Mapping::get(orders, sell_id);
+        // Ensure orders is available
+        assert_eq(buy_order.token_type, 2u64);
+        assert_eq(sell_order.token_type, 2u64);
+        assert_eq(buy_order.status, 0u8);
+        assert_eq(sell_order.status, 0u8);
+        assert_eq(buy_order.is_buy, true);
+        assert_eq(sell_order.is_buy, false);
+
+        // Assert the buy price >= sell price
+        assert(buy_order.price >= sell_order.price);
+        let dealed_quantity: u64 = 0u64;
+        let dealed_price: u64 = sell_order.price;
+        if buy_order.quantity >= sell_order.quantity {
+            dealed_quantity = sell_order.quantity;
+        } else {
+            dealed_quantity = buy_order.quantity;
+        }
+        let dealed_amount: u64 = dealed_price * dealed_quantity;
+
+        // Buyer's amount to unlock
+        let buyer_unlocked_amount: u64 = buy_order.price * dealed_quantity;
+        // Update orders' status
+        let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
+        let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
+        Mapping::set(orders, buy_id, dealed_buy_order);
+        Mapping::set(orders, sell_id, dealed_sell_order);
+
+        // Get the locked credits and token
+        let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
+        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
+
+        let buyer_deposited_token: u64 = Mapping::get_or_init(token2_deposited, buy_order.owner_hash, 0u64);
+        let seller_locked_token: u64 = Mapping::get_or_init(token2_locked, sell_order.owner_hash, 0u64);
+
+        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
+        let caller_token: u64 = Mapping::get_or_init(token2_deposited, caller_hash, 0u64);
+
+        // Buyer decrease the locked credits and increase the token
+        // Fees are collected in the form of tokens
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - buyer_unlocked_amount);
+        Mapping::set(token2_deposited, buy_order.owner_hash, buyer_deposited_token + real_quantity);
+        Mapping::set(token2_deposited, caller_hash, caller_token + token_fee);
+
+        // Seller increase the available credits and decrease the locked token
+        // Fees are collected in the form of credits
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        Mapping::set(token2_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        Mapping::set(credits_deposited, sell_order.owner_hash, seller_deposited_credits + real_amount);
+        Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
+    }
+
+    inline new_order(hash: field,token_type: u64, quantity: u64, price: u64, is_buy: bool) -> Order {
         return Order {
             owner_hash: hash,
+            token_type: token_type,
             is_buy: is_buy,
             quantity: quantity,
             dealed_quantity: 0u64,
@@ -288,6 +548,7 @@ program privx_exchange.aleo {
     inline cancel_order(order: Order) -> Order {
         return Order {
             owner_hash: order.owner_hash,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: order.quantity,
             dealed_quantity: order.dealed_quantity,
@@ -299,6 +560,7 @@ program privx_exchange.aleo {
     inline finish_order(order: Order) -> Order {
         return Order {
             owner_hash: order.owner_hash,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: 0u64,
             dealed_quantity: order.dealed_quantity + order.quantity,
@@ -313,6 +575,7 @@ program privx_exchange.aleo {
         }
         return Order {
             owner_hash: order.owner_hash,
+            token_type: order.token_type,
             is_buy: order.is_buy,
             quantity: order.quantity - quantity,
             dealed_quantity: order.dealed_quantity + quantity,
