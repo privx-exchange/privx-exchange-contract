@@ -422,6 +422,8 @@ program privx_exchange.aleo {
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // Ensure orders is available
+        assert_eq(buy_order.is_buy, true);
+        assert_eq(sell_order.is_buy, false);
         assert_eq(buy_order.token_type, 1u64);
         assert_eq(sell_order.token_type, 1u64);
         assert_eq(buy_order.status, 0u8);
