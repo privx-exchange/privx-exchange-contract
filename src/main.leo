@@ -59,6 +59,38 @@ program privx_exchange.aleo {
     //     };
     // }
 
+    // ******************TEST CLAIM********************
+    transition claim_credits() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_credits(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+        Mapping::set(credits_balances, hash, current_quantity + 100u64);
+    }
+
+    transition claim_token() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_token(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_quantity + 100u64);
+    }
+
+    transition claim_token2() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_token2(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_quantity + 100u64);
+    }
+    // ******************TEST CLAIM********************
+
     transition mint_token_public(to: address, quantity: u64) {
         assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
         let hash: field = BHP256::hash(to);
