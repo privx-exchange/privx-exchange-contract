@@ -67,7 +67,7 @@ program privx_exchange.aleo {
 
     finalize claim_credits(hash: field) {
         let current_quantity: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
-        Mapping::set(credits_balances, hash, current_quantity + 100u64);
+        Mapping::set(credits_balances, hash, current_quantity + 100000000u64);
     }
 
     transition claim_token() {
@@ -77,7 +77,7 @@ program privx_exchange.aleo {
 
     finalize claim_token(hash: field) {
         let current_quantity: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
-        Mapping::set(token_balances, hash, current_quantity + 100u64);
+        Mapping::set(token_balances, hash, current_quantity + 100000000u64);
     }
 
     transition claim_token2() {
@@ -87,7 +87,7 @@ program privx_exchange.aleo {
 
     finalize claim_token2(hash: field) {
         let current_quantity: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
-        Mapping::set(token_balances, hash, current_quantity + 100u64);
+        Mapping::set(token_balances, hash, current_quantity + 100000000u64);
     }
     // ******************TEST CLAIM********************
 
