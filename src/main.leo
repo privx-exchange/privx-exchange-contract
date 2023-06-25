@@ -59,6 +59,38 @@ program privx_exchange.aleo {
     //     };
     // }
 
+    // ******************TEST CLAIM********************
+    transition claim_credits() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_credits(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(credits_balances, hash, 0u64);
+        Mapping::set(credits_balances, hash, current_quantity + 100000000u64);
+    }
+
+    transition claim_token() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_token(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(token_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_quantity + 100000000u64);
+    }
+
+    transition claim_token2() {
+        let hash: field = BHP256::hash(self.caller);
+        return then finalize(hash);
+    }
+
+    finalize claim_token2(hash: field) {
+        let current_quantity: u64 = Mapping::get_or_init(token2_balances, hash, 0u64);
+        Mapping::set(token_balances, hash, current_quantity + 100000000u64);
+    }
+    // ******************TEST CLAIM********************
+
     transition mint_token_public(to: address, quantity: u64) {
         assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
         let hash: field = BHP256::hash(to);
@@ -176,15 +208,21 @@ program privx_exchange.aleo {
     }
 
     transition buy(quantity: u64, price: u64) -> Order {
+        assert(quantity > 0u64);
+        assert(price > 0u64);
+        assert(quantity % 10000u64 == 0u64);
+        assert(price % 10000u64 == 0u64);
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, quantity, price);
     }
 
     finalize buy(hash: field, quantity: u64, price: u64) {
+        let order_amount: u64 = quantity * price / 1000000u64;
+
         let current_deposited: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
-        Mapping::set(credits_deposited, hash, current_deposited - quantity * price);
+        Mapping::set(credits_deposited, hash, current_deposited - order_amount);
         let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
-        Mapping::set(credits_locked, hash, locked_amount + quantity * price);
+        Mapping::set(credits_locked, hash, locked_amount + order_amount);
 
         let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
         Mapping::set(sequence, 0u64, next_id + 1u64);
@@ -202,15 +240,21 @@ program privx_exchange.aleo {
     }
 
     transition buy_2(quantity: u64, price: u64) -> Order {
+        assert(quantity > 0u64);
+        assert(price > 0u64);
+        assert(quantity % 10000u64 == 0u64);
+        assert(price % 10000u64 == 0u64);
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, quantity, price);
     }
 
     finalize buy_2(hash: field, quantity: u64, price: u64) {
+        let order_amount: u64 = quantity * price / 1000000u64;
+
         let current_deposited: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
-        Mapping::set(credits_deposited, hash, current_deposited - quantity * price);
+        Mapping::set(credits_deposited, hash, current_deposited - order_amount);
         let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
-        Mapping::set(credits_locked, hash, locked_amount + quantity * price);
+        Mapping::set(credits_locked, hash, locked_amount + order_amount);
 
         let next_id: u64 = Mapping::get_or_init(sequence, 0u64, 0u64);
         Mapping::set(sequence, 0u64, next_id + 1u64);
@@ -228,11 +272,15 @@ program privx_exchange.aleo {
     }
 
     transition sell(quantity: u64, price: u64) {
+        assert(quantity > 0u64);
+        assert(price > 0u64);
+        assert(quantity % 10000u64 == 0u64);
+        assert(price % 10000u64 == 0u64);
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, quantity, price);
     }
 
-    finalize sell(hash: field, quantity: u64, price: u64) {
+    finalize sell(hash: field, quantity: u64, price: u64) {        
         let current_deposited: u64 = Mapping::get_or_init(token_deposited, hash, 0u64);
         Mapping::set(token_deposited, hash, current_deposited - quantity);
         let locked_quantity: u64 = Mapping::get_or_init(token_locked, hash, 0u64);
@@ -254,6 +302,10 @@ program privx_exchange.aleo {
     }
 
     transition sell_2(quantity: u64, price: u64) {
+        assert(quantity > 0u64);
+        assert(price > 0u64);
+        assert(quantity % 10000u64 == 0u64);
+        assert(price % 10000u64 == 0u64);
         let hash: field = BHP256::hash(self.caller);
         return then finalize(hash, quantity, price);
     }
@@ -351,15 +403,15 @@ program privx_exchange.aleo {
         assert_eq(order.owner_hash, hash);
         assert_eq(order.status, 0u8);
         assert_eq(order.is_buy, true);
-
         // Modify order's status
         let canceled_order: Order = cancel_order(order);
         Mapping::set(orders, id, canceled_order);
-        
+
+        let left_order_amount: u64 = order.quantity * order.price / 1000000u64; 
         let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
-        Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+        Mapping::set(credits_locked, hash, locked_amount - left_order_amount);
         let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
-        Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
+        Mapping::set(credits_deposited, hash, deposited_amount + left_order_amount);
     }
 
 
@@ -407,10 +459,11 @@ program privx_exchange.aleo {
         let canceled_order: Order = cancel_order(order);
         Mapping::set(orders, id, canceled_order);
         
+        let left_order_amount: u64 = order.quantity * order.price / 1000000u64; 
         let locked_amount: u64 = Mapping::get_or_init(credits_locked, hash, 0u64);
-        Mapping::set(credits_locked, hash, locked_amount - order.quantity * order.price);
+        Mapping::set(credits_locked, hash, locked_amount - left_order_amount);
         let deposited_amount: u64 = Mapping::get_or_init(credits_deposited, hash, 0u64);
-        Mapping::set(credits_deposited, hash, deposited_amount + order.quantity * order.price);
+        Mapping::set(credits_deposited, hash, deposited_amount + left_order_amount);
     }
 
     transition knockdown(buy_id: u64, sell_id: u64) {
@@ -435,44 +488,120 @@ program privx_exchange.aleo {
         assert(buy_order.price >= sell_order.price);
         let dealed_quantity: u64 = 0u64;
         let dealed_price: u64 = sell_order.price;
-        if buy_order.quantity >= sell_order.quantity {
-            dealed_quantity = sell_order.quantity;
-        } else {
-            dealed_quantity = buy_order.quantity;
-        }
-        let dealed_amount: u64 = dealed_price * dealed_quantity;
+        // if buy_order.quantity >= sell_order.quantity {
+        //     dealed_quantity = sell_order.quantity;
+        // } else {
+        //     dealed_quantity = buy_order.quantity;
+        // }
+        assert(buy_order.quantity <= sell_order.quantity);
+        dealed_quantity = buy_order.quantity;
 
-        // Buyer's amount to unlock
-        let buyer_unlocked_amount: u64 = buy_order.price * dealed_quantity;
-        // Update orders' status
+        let dealed_amount: u64 = dealed_price * dealed_quantity / 1000000u64;
+        let max_dealed_amount: u64 = buy_order.price * dealed_quantity / 1000000u64;
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        let buyer_return_amount: u64 = max_dealed_amount - dealed_amount;
+        // 1.Caculate token fee
+        let caller_token: u64 = Mapping::get_or_init(token_deposited, caller_hash, 0u64);
+        Mapping::set(token_deposited, caller_hash, caller_token + token_fee);
+        
+        // 2.Caculate credits fee
+        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
+        Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
+
+
+        // 3.Update orders' status
         let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
         let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
         Mapping::set(orders, buy_id, dealed_buy_order);
         Mapping::set(orders, sell_id, dealed_sell_order);
 
-        // Get the locked credits and token
+
+        // 4.Update buyer's locked credits
         let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
-        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
-
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - max_dealed_amount);
+        // Update buyer's deposited credits
+        let buyer_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, buy_order.owner_hash, buyer_deposited_credits + buyer_return_amount);
+        // Update buyer's deposited token
         let buyer_deposited_token: u64 = Mapping::get_or_init(token_deposited, buy_order.owner_hash, 0u64);
-        let seller_locked_token: u64 = Mapping::get_or_init(token_locked, sell_order.owner_hash, 0u64);
-
-        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
-        let caller_token: u64 = Mapping::get_or_init(token_deposited, caller_hash, 0u64);
-
-        // Buyer decrease the locked credits and increase the token
-        // Fees are collected in the form of tokens
-        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
-        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - buyer_unlocked_amount);
         Mapping::set(token_deposited, buy_order.owner_hash, buyer_deposited_token + real_quantity);
-        Mapping::set(token_deposited, caller_hash, caller_token + token_fee);
+        
 
-        // Seller increase the available credits and decrease the locked token
-        // Fees are collected in the form of credits
-        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        // 5.Update seller's locked token
+        let seller_locked_token: u64 = Mapping::get_or_init(token_locked, sell_order.owner_hash, 0u64);
         Mapping::set(token_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        // Update seller's deposited credits
+        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
         Mapping::set(credits_deposited, sell_order.owner_hash, seller_deposited_credits + real_amount);
+    }
+
+    transition knockdown_gt(buy_id: u64, sell_id: u64) {
+        let caller_hash: field = BHP256::hash(self.caller);
+        return then finalize(caller_hash, buy_id, sell_id);
+    }
+
+    finalize knockdown_gt(caller_hash: field, buy_id: u64, sell_id: u64) {
+        let buy_order: Order = Mapping::get(orders, buy_id);
+        let sell_order: Order = Mapping::get(orders, sell_id);
+        // Ensure orders is available
+        assert_eq(buy_order.token_type, 1u64);
+        assert_eq(sell_order.token_type, 1u64);
+        assert_eq(buy_order.status, 0u8);
+        assert_eq(sell_order.status, 0u8);
+        assert_eq(buy_order.is_buy, true);
+        assert_eq(sell_order.is_buy, false);
+
+        // Assert the buy price >= sell price
+        assert(buy_order.price >= sell_order.price);
+        let dealed_quantity: u64 = 0u64;
+        let dealed_price: u64 = sell_order.price;
+        // if buy_order.quantity >= sell_order.quantity {
+        //     dealed_quantity = sell_order.quantity;
+        // } else {
+        //     dealed_quantity = buy_order.quantity;
+        // }
+        assert(buy_order.quantity > sell_order.quantity);
+        dealed_quantity = sell_order.quantity;
+
+        let dealed_amount: u64 = dealed_price * dealed_quantity / 1000000u64;
+        let max_dealed_amount: u64 = buy_order.price * dealed_quantity / 1000000u64;
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        let buyer_return_amount: u64 = max_dealed_amount - dealed_amount;
+        // 1.Caculate token fee
+        let caller_token: u64 = Mapping::get_or_init(token_deposited, caller_hash, 0u64);
+        Mapping::set(token_deposited, caller_hash, caller_token + token_fee);
+        
+        // 2.Caculate credits fee
+        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
         Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
+
+
+        // 3.Update orders' status
+        let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
+        let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
+        Mapping::set(orders, buy_id, dealed_buy_order);
+        Mapping::set(orders, sell_id, dealed_sell_order);
+
+
+        // 4.Update buyer's locked credits
+        let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - max_dealed_amount);
+        // Update buyer's deposited credits
+        let buyer_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, buy_order.owner_hash, buyer_deposited_credits + buyer_return_amount);
+        // Update buyer's deposited token
+        let buyer_deposited_token: u64 = Mapping::get_or_init(token_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(token_deposited, buy_order.owner_hash, buyer_deposited_token + real_quantity);
+        
+
+        // 5.Update seller's locked token
+        let seller_locked_token: u64 = Mapping::get_or_init(token_locked, sell_order.owner_hash, 0u64);
+        Mapping::set(token_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        // Update seller's deposited credits
+        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, sell_order.owner_hash, seller_deposited_credits + real_amount);
     }
 
     transition knockdown_2(buy_id: u64, sell_id: u64) {
@@ -495,44 +624,120 @@ program privx_exchange.aleo {
         assert(buy_order.price >= sell_order.price);
         let dealed_quantity: u64 = 0u64;
         let dealed_price: u64 = sell_order.price;
-        if buy_order.quantity >= sell_order.quantity {
-            dealed_quantity = sell_order.quantity;
-        } else {
-            dealed_quantity = buy_order.quantity;
-        }
-        let dealed_amount: u64 = dealed_price * dealed_quantity;
+        // if buy_order.quantity >= sell_order.quantity {
+        //     dealed_quantity = sell_order.quantity;
+        // } else {
+        //     dealed_quantity = buy_order.quantity;
+        // }
+        assert(buy_order.quantity <= sell_order.quantity);
+        dealed_quantity = sell_order.quantity;
 
-        // Buyer's amount to unlock
-        let buyer_unlocked_amount: u64 = buy_order.price * dealed_quantity;
-        // Update orders' status
+        let dealed_amount: u64 = dealed_price * dealed_quantity / 1000000u64;
+        let max_dealed_amount: u64 = buy_order.price * dealed_quantity / 1000000u64;
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        let buyer_return_amount: u64 = max_dealed_amount - dealed_amount;
+        // 1.Caculate token fee
+        let caller_token: u64 = Mapping::get_or_init(token2_deposited, caller_hash, 0u64);
+        Mapping::set(token2_deposited, caller_hash, caller_token + token_fee);
+        
+        // 2.Caculate credits fee
+        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
+        Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
+
+
+        // 3.Update orders' status
         let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
         let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
         Mapping::set(orders, buy_id, dealed_buy_order);
         Mapping::set(orders, sell_id, dealed_sell_order);
 
-        // Get the locked credits and token
+
+        // 4.Update buyer's locked credits
         let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
-        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
-
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - max_dealed_amount);
+        // Update buyer's deposited credits
+        let buyer_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, buy_order.owner_hash, buyer_deposited_credits + buyer_return_amount);
+        // Update buyer's deposited token
         let buyer_deposited_token: u64 = Mapping::get_or_init(token2_deposited, buy_order.owner_hash, 0u64);
-        let seller_locked_token: u64 = Mapping::get_or_init(token2_locked, sell_order.owner_hash, 0u64);
-
-        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
-        let caller_token: u64 = Mapping::get_or_init(token2_deposited, caller_hash, 0u64);
-
-        // Buyer decrease the locked credits and increase the token
-        // Fees are collected in the form of tokens
-        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
-        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - buyer_unlocked_amount);
         Mapping::set(token2_deposited, buy_order.owner_hash, buyer_deposited_token + real_quantity);
-        Mapping::set(token2_deposited, caller_hash, caller_token + token_fee);
+        
 
-        // Seller increase the available credits and decrease the locked token
-        // Fees are collected in the form of credits
-        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        // 5.Update seller's locked token
+        let seller_locked_token: u64 = Mapping::get_or_init(token2_locked, sell_order.owner_hash, 0u64);
         Mapping::set(token2_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        // Update seller's deposited credits
+        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
         Mapping::set(credits_deposited, sell_order.owner_hash, seller_deposited_credits + real_amount);
+    }
+
+    transition knockdown_2_gt(buy_id: u64, sell_id: u64) {
+        let caller_hash: field = BHP256::hash(self.caller);
+        return then finalize(caller_hash, buy_id, sell_id);
+    }
+
+    finalize knockdown_2_gt(caller_hash: field, buy_id: u64, sell_id: u64) {
+        let buy_order: Order = Mapping::get(orders, buy_id);
+        let sell_order: Order = Mapping::get(orders, sell_id);
+        // Ensure orders is available
+        assert_eq(buy_order.token_type, 2u64);
+        assert_eq(sell_order.token_type, 2u64);
+        assert_eq(buy_order.status, 0u8);
+        assert_eq(sell_order.status, 0u8);
+        assert_eq(buy_order.is_buy, true);
+        assert_eq(sell_order.is_buy, false);
+
+        // Assert the buy price >= sell price
+        assert(buy_order.price >= sell_order.price);
+        let dealed_quantity: u64 = 0u64;
+        let dealed_price: u64 = sell_order.price;
+        // if buy_order.quantity >= sell_order.quantity {
+        //     dealed_quantity = sell_order.quantity;
+        // } else {
+        //     dealed_quantity = buy_order.quantity;
+        // }
+        assert(buy_order.quantity > sell_order.quantity);
+        dealed_quantity = sell_order.quantity;
+
+        let dealed_amount: u64 = dealed_price * dealed_quantity / 1000000u64;
+        let max_dealed_amount: u64 = buy_order.price * dealed_quantity / 1000000u64;
+        let (real_quantity, token_fee): (u64, u64) = charge_fee(dealed_quantity);
+        let (real_amount, credits_fee): (u64, u64) = charge_fee(dealed_amount);
+        let buyer_return_amount: u64 = max_dealed_amount - dealed_amount;
+        // 1.Caculate token fee
+        let caller_token: u64 = Mapping::get_or_init(token2_deposited, caller_hash, 0u64);
+        Mapping::set(token2_deposited, caller_hash, caller_token + token_fee);
+        
+        // 2.Caculate credits fee
+        let caller_credits: u64 = Mapping::get_or_init(credits_deposited, caller_hash, 0u64);
         Mapping::set(credits_deposited, caller_hash, caller_credits + credits_fee);
+
+
+        // 3.Update orders' status
+        let dealed_buy_order: Order = modify_order_quantity(buy_order, dealed_quantity);
+        let dealed_sell_order: Order = modify_order_quantity(sell_order, dealed_quantity);
+        Mapping::set(orders, buy_id, dealed_buy_order);
+        Mapping::set(orders, sell_id, dealed_sell_order);
+
+
+        // 4.Update buyer's locked credits
+        let buyer_locked_credits: u64 = Mapping::get_or_init(credits_locked, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_locked, buy_order.owner_hash, buyer_locked_credits - max_dealed_amount);
+        // Update buyer's deposited credits
+        let buyer_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, buy_order.owner_hash, buyer_deposited_credits + buyer_return_amount);
+        // Update buyer's deposited token
+        let buyer_deposited_token: u64 = Mapping::get_or_init(token2_deposited, buy_order.owner_hash, 0u64);
+        Mapping::set(token2_deposited, buy_order.owner_hash, buyer_deposited_token + real_quantity);
+        
+
+        // 5.Update seller's locked token
+        let seller_locked_token: u64 = Mapping::get_or_init(token2_locked, sell_order.owner_hash, 0u64);
+        Mapping::set(token2_locked, sell_order.owner_hash, seller_locked_token - dealed_quantity);
+        // Update seller's deposited credits
+        let seller_deposited_credits: u64 = Mapping::get_or_init(credits_deposited, sell_order.owner_hash, 0u64);
+        Mapping::set(credits_deposited, sell_order.owner_hash, seller_deposited_credits + real_amount);
     }
 
     inline new_order(hash: field,token_type: u64, quantity: u64, price: u64, is_buy: bool) -> Order {
