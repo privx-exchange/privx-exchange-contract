@@ -60,7 +60,7 @@ program privx_exchange.aleo {
     // }
 
     // ******************TEST CLAIM********************
-    transition claim_credits() {
+    transition claim_credits(amount: u64) {
         let hash: field = BHP256::hash_to_field(self.caller);
         return then finalize(hash);
     }
@@ -70,7 +70,7 @@ program privx_exchange.aleo {
         Mapping::set(credits_balances, hash, current_quantity + 100000000u64);
     }
 
-    transition claim_token() {
+    transition claim_token(amount: u64) {
         let hash: field = BHP256::hash_to_field(self.caller);
         return then finalize(hash);
     }
@@ -80,7 +80,7 @@ program privx_exchange.aleo {
         Mapping::set(token_balances, hash, current_quantity + 100000000u64);
     }
 
-    transition claim_token2() {
+    transition claim_token2(amount: u64) {
         let hash: field = BHP256::hash_to_field(self.caller);
         return then finalize(hash);
     }
@@ -481,8 +481,6 @@ program privx_exchange.aleo {
         assert_eq(sell_order.token_type, 1u64);
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
-        assert_eq(buy_order.is_buy, true);
-        assert_eq(sell_order.is_buy, false);
 
         // Assert the buy price >= sell price
         assert(buy_order.price >= sell_order.price);
