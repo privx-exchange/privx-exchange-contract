@@ -24,20 +24,103 @@ PrivX, a decentralized exchange built on Aleo, will bring immense value to the e
 - token_locked: store the locked **token** amount of users, the locked token amount is sell `Order`s' token amount.
 - sequence: workaround to generate a seq id
 
+
+
 #### struct
 
 - Order: the required data of an order
 
+
+
 #### function
 
-- mint_credits: mint **credits**
-- deposit_credits: from  `credits_balance` to `credits_deposited`
-- withdraw_credits: from `credits_deposited` to `credits_balance`  
-- mint_token: mint arc20's token 
-- deposit_token: from `token_balance` to `token_deposited`
-- withdraw_token: from `token_deposited` to `token_balance`
-- **buy**: decrease the `credits_deposited`, increase the `credits_locked` and generate a new **buy** `Order` with a seq `id`
-- **sell**: decrease the `token_deposited`, increaase the `token_locked` and genarate a new **sell** `Order` with a seq `id`
-- **knockdown**: specify a sell order's id and a buy order's id and check whether the transaction conditions are met and if so, the transaction is completed.
+##### 1.mint_credits
 
+**Params** 
 
+- address: the address to receive the credits
+- amount: the quantity of credits to mint
+
+**Description**
+
+Mint specify amount credits to an address.
+
+##### 2.deposit_credits
+
+**Params**
+
+- amount: the amount of credits to move from  `credits_balance` to `credits_deposited`
+
+**Description**
+
+Move specific amount credits from  `credits_balance` to `credits_deposited`
+
+##### 3.withdraw_credits
+
+**Params**
+
+- amount: the amount to move from `credits_deposited` to `credits_balance`  
+
+**Description**
+
+Move specific amount credits from  `credits_deposited` to `credits_balance`
+
+##### 4.mint_token
+
+**Params** 
+
+- address: the address to receive the token
+- amount: the amount of token to mint
+
+**Description**
+
+Mint specify amount arc20's token to an address.
+
+##### 5.deposit_token 
+
+**Params**
+
+- amount: the amount of credits to move from  `token_balance` to `token_deposited`
+
+**Description**
+
+Move specific amount credits from  `token_balance` to `token_deposited`
+
+##### 6.withdraw_credits
+
+**Params**
+
+- amount: the amount to move from `token_deposited` to `token_balance`  
+
+**Description**
+
+Move specific amount credits from  `token_deposited` to `token_balance`
+
+##### 7.buy
+
+**Params**
+
+- quantity: the order's quantity 
+- price: the price willing to pay for single quantity of token
+
+**Description**
+
+decrease the `credits_deposited`, increase the `credits_locked` and generate a new **buy** `Order` with a seq `id`
+
+**8.sell**
+
+- quantity: the order's quantity 
+- price: the price wiiling to sell for single quantity of token
+
+**Description**
+
+decrease the `token_deposited`, increaase the `token_locked` and genarate a new **sell** `Order` with a seq `id`
+
+**9.knockdown**
+
+Params
+
+- sell_order_id: the transaction's sell order id
+- buy_order_id: the transaction's buy order id
+
+Description: Specify a sell order's id and a buy order's id and check whether the transaction conditions are met and if so, the transaction is completed.
