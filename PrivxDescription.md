@@ -45,6 +45,8 @@ PrivX, a decentralized exchange built on Aleo, will bring immense value to the e
 
 Mint specify amount credits to an address.
 
+
+
 ##### 2.deposit_credits
 
 **Params**
@@ -55,6 +57,8 @@ Mint specify amount credits to an address.
 
 Move specific amount credits from  `credits_balance` to `credits_deposited`
 
+
+
 ##### 3.withdraw_credits
 
 **Params**
@@ -64,6 +68,8 @@ Move specific amount credits from  `credits_balance` to `credits_deposited`
 **Description**
 
 Move specific amount credits from  `credits_deposited` to `credits_balance`
+
+
 
 ##### 4.mint_token
 
@@ -76,6 +82,8 @@ Move specific amount credits from  `credits_deposited` to `credits_balance`
 
 Mint specify amount arc20's token to an address.
 
+
+
 ##### 5.deposit_token 
 
 **Params**
@@ -86,6 +94,8 @@ Mint specify amount arc20's token to an address.
 
 Move specific amount credits from  `token_balance` to `token_deposited`
 
+
+
 ##### 6.withdraw_credits
 
 **Params**
@@ -95,6 +105,8 @@ Move specific amount credits from  `token_balance` to `token_deposited`
 **Description**
 
 Move specific amount credits from  `token_deposited` to `token_balance`
+
+
 
 ##### 7.buy
 
@@ -107,7 +119,11 @@ Move specific amount credits from  `token_deposited` to `token_balance`
 
 decrease the `credits_deposited`, increase the `credits_locked` and generate a new **buy** `Order` with a seq `id`
 
-**8.sell**
+
+
+##### 8.sell
+
+**Params**
 
 - quantity: the order's quantity 
 - price: the price wiiling to sell for single quantity of token
@@ -116,11 +132,29 @@ decrease the `credits_deposited`, increase the `credits_locked` and generate a n
 
 decrease the `token_deposited`, increaase the `token_locked` and genarate a new **sell** `Order` with a seq `id`
 
-**9.knockdown**
 
-Params
+
+##### 9.knockdown
+
+**Params**
 
 - sell_order_id: the transaction's sell order id
 - buy_order_id: the transaction's buy order id
 
-Description: Specify a sell order's id and a buy order's id and check whether the transaction conditions are met and if so, the transaction is completed.
+**Description**
+
+Specify a sell order's id and a buy order's id and check whether the transaction conditions are met and if so, the transaction is completed.
+
+
+
+**10.cancel**
+
+**Params**
+
+- order_id: indicates which order to be canceled
+
+**Description**
+
+Cancel an order belongs to the `caller`,  return back the `locked` amount to `deposited` amount
+
+
