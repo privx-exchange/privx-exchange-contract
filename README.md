@@ -47,7 +47,7 @@ PrivX, a decentralized exchange built on Aleo, will bring immense value to the e
 
 `leo build`
 
-### A description of parameters, functions, etc. This should live in the README for your project.**
+### A description of parameters, functions, etc. This should live in the README for your project.
 
 #### mapping
 
