@@ -290,7 +290,7 @@ program privx_exchange.aleo {
         // 2.Ensure the token_id is matched
         assert_eq(buy_order.token_id, sell_order.token_id);
         // 3.Ensure the buy order's price > sell order's price
-        assert(buy_order.price > sell_order.price);
+        assert(buy_order.price >= sell_order.price);
 
 
         // token_amount = max(buy_order.amount, sell_order.amount)
