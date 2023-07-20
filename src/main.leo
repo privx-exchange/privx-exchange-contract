@@ -55,6 +55,9 @@ program privx_exchange.aleo {
     // 1u64 => next_order_id
     mapping sequence: u64 => u64;
 
+    // price decimal
+    mapping price_decimals: u64 => u8;
+
     transition register(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
         return then finalize(self.caller, token_name, token_symbol, token_logo, total_supply);
     }
@@ -186,17 +189,15 @@ program privx_exchange.aleo {
 
     // Assume that token_id 0 is the stablecoin
     transition buy(public token_id: u64,public amount: u64,public price: u64) {
-        // expected_amount * price % exepected_token_decimal == 0
         assert(amount > 0u64);
         assert(price > 0u64);
-        assert(amount % 10000u64 == 0u64);
-        assert(price % 10000u64 == 0u64);
         assert(token_id > 0u64);
         return then finalize(self.caller, token_id, amount, price);
     }
 
     finalize buy(buyer: address, token_id: u64, token_amount: u64, price: u64) {
-        let usdt_amount: u64 = token_amount * price / 1000000u64;
+        let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
+        let usdt_amount: u64 = token_amount * price / (10u64**price_decimal);
         // let buyer_key: Pair = new_pair(0u64, buyer);
         let buyer_key: Pair = Pair {
             addr: buyer,
@@ -228,14 +229,13 @@ program privx_exchange.aleo {
     transition sell(public token_id: u64,public amount: u64,public price: u64) {
         assert(amount > 0u64);
         assert(price > 0u64);
-        assert(amount % 10000u64 == 0u64);
-        assert(price % 10000u64 == 0u64);
         assert(token_id > 0u64);
         return then finalize(self.caller, token_id, amount, price);
     }
 
     finalize sell(seller: address, token_id: u64, token_amount: u64, price: u64) {
-        let usdt_amount: u64 = token_amount * price / 1000000u64;
+        let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
+        let usdt_amount: u64 = token_amount * price / (10u64**price_decimal);
         // let seller_key: Pair = new_pair(token_id, seller);
         let seller_key: Pair = Pair {
             addr: seller,
@@ -280,6 +280,7 @@ program privx_exchange.aleo {
     }
 
     finalize knockdown(buy_id: u64, sell_id: u64) {
+        let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // 1.Ensure the orders is available
@@ -302,8 +303,8 @@ program privx_exchange.aleo {
             token_amount = buy_order.amount;
         }
         
-        let dealed_usdt_amount: u64 = price * token_amount / 1000000u64;
-        let max_usdt_amount: u64 = buy_order.price * token_amount / 1000000u64;
+        let dealed_usdt_amount: u64 = price * token_amount / (10u64**price_decimal);
+        let max_usdt_amount: u64 = buy_order.price * token_amount / (10u64**price_decimal);
         let returned_usdt_to_buyer: u64 = max_usdt_amount - dealed_usdt_amount;
 
         // TODO: 1.charge the fee
