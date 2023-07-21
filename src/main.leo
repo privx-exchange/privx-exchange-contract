@@ -58,12 +58,31 @@ program privx_exchange.aleo {
     // price decimal
     mapping price_decimals: u64 => u8;
 
+    // TokenId = 0 is the stablecoin to trade.
+    transition register_stablecoin(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
+        assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
+        return then finalize(self.caller, token_name, token_symbol, token_logo, total_supply);
+    }
+    finalize register_stablecoin(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, total_supply: u64) {
+        let token_meta: TokenMeta = TokenMeta {
+            minter: caller,
+            token_id: 0u64,
+            token_name: token_name,
+            token_symbol: token_symbol,
+            token_logo: token_logo,
+            circulating: 0u64,
+            total_supply: total_supply,
+            decimals: 6u8,
+        };
+        Mapping::set(registry, 0u64, token_meta);
+    }
+
     transition register(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
         return then finalize(self.caller, token_name, token_symbol, token_logo, total_supply);
     }
 
     finalize register(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, total_supply: u64) {
-        let next_id: u64 = Mapping::get_or_use(sequence, 0u64, 0u64);
+        let next_id: u64 = Mapping::get_or_use(sequence, 0u64, 1u64);
         let token_meta: TokenMeta = TokenMeta {
             minter: caller,
             token_id: next_id,
@@ -280,7 +299,6 @@ program privx_exchange.aleo {
     }
 
     finalize knockdown(buy_id: u64, sell_id: u64) {
-        let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
         let buy_order: Order = Mapping::get(orders, buy_id);
         let sell_order: Order = Mapping::get(orders, sell_id);
         // 1.Ensure the orders is available
@@ -292,7 +310,7 @@ program privx_exchange.aleo {
         assert_eq(buy_order.token_id, sell_order.token_id);
         // 3.Ensure the buy order's price > sell order's price
         assert(buy_order.price >= sell_order.price);
-
+        let price_decimal: u8 = Mapping::get_or_use(price_decimals, buy_order.token_id, 6u8);
 
         // token_amount = max(buy_order.amount, sell_order.amount)
         let price: u64 = sell_order.price;
