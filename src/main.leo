@@ -304,6 +304,8 @@ program privx_exchange.aleo {
         // 1.Ensure the orders is available
         assert_eq(buy_order.status, 0u8);
         assert_eq(sell_order.status, 0u8);
+        assert(buy_order.amount > 0u64);
+        assert(sell_order.amount > 0u64);
         assert_eq(buy_order.is_buy, true);
         assert_eq(sell_order.is_buy, false);
         // 2.Ensure the token_id is matched
