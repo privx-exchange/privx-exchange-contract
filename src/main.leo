@@ -43,8 +43,14 @@ program privx_exchange.aleo {
         status: u8,
     }
 
+    struct Setting {
+        // Indicate token amount could be claimed.
+        claim_amount: u64,
+    }
+
     mapping balance: Pair => u64;
     mapping registry: u64 => TokenMeta;
+    mapping settings: u64 => Setting;
 
     // For Privx trade
     mapping deposited: Pair => u64;
@@ -74,7 +80,11 @@ program privx_exchange.aleo {
             total_supply: total_supply,
             decimals: 6u8,
         };
+        let token_setting: Setting = Setting {
+            claim_amount: 0u64,
+        };
         Mapping::set(registry, 0u64, token_meta);
+        Mapping::set(settings, 0u64, token_setting);
     }
 
     transition register(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
@@ -95,6 +105,10 @@ program privx_exchange.aleo {
         };
         Mapping::set(sequence, 0u64, next_id + 1u64);
         Mapping::set(registry, next_id, token_meta);
+        let token_setting: Setting = Setting {
+            claim_amount: 0u64,
+        };
+        Mapping::set(settings, 0u64, token_setting);
     }
 
     transition change_minter(token_id: u64, new_minter: address) {
@@ -115,6 +129,20 @@ program privx_exchange.aleo {
             decimals: token_meta.decimals
         };
         Mapping::set(registry, token_id, updated_token_meta);
+    }
+
+    transition claim(public token_id: u64) {
+        return then finalize(self.caller, token_id);
+    }
+
+    finalize claim(caller: address, public token_id: u64) {
+        let token_setting: Setting = Mapping::get(settings, token_id);
+        let key_pair: Pair = Pair {
+            addr: caller,
+            token_id: token_id,
+        };
+        let current_amount: u64 = Mapping::get_or_use(balance, key_pair, 0u64);
+        Mapping::set(balance, key_pair, current_amount + token_setting.claim_amount);
     }
 
     transition mint_public(public token_id: u64, public to: address, public amount: u64) {
