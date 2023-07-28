@@ -26,8 +26,8 @@ program privx_exchange.aleo {
 
         // Circulating
         circulating: u64,
-        // Total supply
-        total_supply: u64,
+        // Max supply
+        max_supply: u64,
 
         // Decimal
         decimals: u8,
@@ -65,11 +65,11 @@ program privx_exchange.aleo {
     mapping price_decimals: u64 => u8;
 
     // TokenId = 0 is the stablecoin to trade.
-    transition register_stablecoin(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
+    transition register_stablecoin(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public max_supply: u64) {
         assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
-        return then finalize(self.caller, token_name, token_symbol, token_logo, total_supply);
+        return then finalize(self.caller, token_name, token_symbol, token_logo, max_supply);
     }
-    finalize register_stablecoin(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, total_supply: u64) {
+    finalize register_stablecoin(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, max_supply: u64) {
         let token_meta: TokenMeta = TokenMeta {
             minter: caller,
             token_id: 0u64,
@@ -77,7 +77,7 @@ program privx_exchange.aleo {
             token_symbol: token_symbol,
             token_logo: token_logo,
             circulating: 0u64,
-            total_supply: total_supply,
+            max_supply: max_supply,
             decimals: 6u8,
         };
         let token_setting: Setting = Setting {
@@ -87,11 +87,11 @@ program privx_exchange.aleo {
         Mapping::set(settings, 0u64, token_setting);
     }
 
-    transition register(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public total_supply: u64) {
-        return then finalize(self.caller, token_name, token_symbol, token_logo, total_supply);
+    transition register(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public max_supply: u64) {
+        return then finalize(self.caller, token_name, token_symbol, token_logo, max_supply);
     }
 
-    finalize register(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, total_supply: u64) {
+    finalize register(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, max_supply: u64) {
         let next_id: u64 = Mapping::get_or_use(sequence, 0u64, 1u64);
         let token_meta: TokenMeta = TokenMeta {
             minter: caller,
@@ -100,7 +100,7 @@ program privx_exchange.aleo {
             token_symbol: token_symbol,
             token_logo: token_logo,
             circulating: 0u64,
-            total_supply: total_supply,
+            max_supply: max_supply,
             decimals: 6u8,
         };
         Mapping::set(sequence, 0u64, next_id + 1u64);
@@ -125,7 +125,7 @@ program privx_exchange.aleo {
             token_symbol: token_meta.token_symbol,
             token_logo: token_meta.token_logo,
             circulating: token_meta.circulating,
-            total_supply: token_meta.total_supply,
+            max_supply: token_meta.max_supply,
             decimals: token_meta.decimals
         };
         Mapping::set(registry, token_id, updated_token_meta);
@@ -154,9 +154,9 @@ program privx_exchange.aleo {
         let token_meta: TokenMeta = Mapping::get(registry, token_id);
         assert_eq(minter, token_meta.minter);
 
-        // Ensure the circulating <= total_supply
+        // Ensure the circulating <= max_supply
         let updated_circulating: u64 = token_meta.circulating + amount;
-        assert(updated_circulating <= token_meta.total_supply);
+        assert(updated_circulating <= token_meta.max_supply);
         // let updated_token_meta: TokenMeta = update_meta_circulating(token_meta, updated_circulating);
         let updated_token_meta: TokenMeta = TokenMeta{
             minter: token_meta.minter,
@@ -165,7 +165,7 @@ program privx_exchange.aleo {
             token_name: token_meta.token_name,
             token_symbol: token_meta.token_symbol,
             circulating: updated_circulating,
-            total_supply: token_meta.total_supply,
+            max_supply: token_meta.max_supply,
             decimals: token_meta.decimals
         };
         Mapping::set(registry, token_id, updated_token_meta);
@@ -424,7 +424,7 @@ program privx_exchange.aleo {
             token_symbol: token_meta.token_symbol,
             token_logo: token_meta.token_logo,
             circulating: new_circulating,
-            total_supply: token_meta.total_supply,
+            max_supply: token_meta.max_supply,
             decimals: token_meta.decimals
         };
     }
