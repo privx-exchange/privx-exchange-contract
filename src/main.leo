@@ -108,7 +108,7 @@ program privx_exchange.aleo {
         let token_setting: Setting = Setting {
             claim_amount: 0u64,
         };
-        Mapping::set(settings, 0u64, token_setting);
+        Mapping::set(settings, next_id, token_setting);
     }
 
     transition change_minter(token_id: u64, new_minter: address) {
