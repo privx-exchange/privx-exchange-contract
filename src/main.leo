@@ -131,6 +131,18 @@ program privx_exchange.aleo {
         Mapping::set(registry, token_id, updated_token_meta);
     }
 
+    transition change_setting(token_id: u64, new_setting: Setting) {
+        return then finalize(self.caller, token_id, new_setting);
+    }
+
+    finalize change_setting(caller: address, token_id: u64, new_setting: Setting) {
+        // Ensure caller own the token_id
+        let meta: TokenMeta = Mapping::get(registry, token_id);
+        assert_eq(meta.minter, caller);
+        // Overwrite setting
+        Mapping::set(settings, token_id, new_setting);
+    }
+
     transition claim(public token_id: u64) {
         return then finalize(self.caller, token_id);
     }
