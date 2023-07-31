@@ -355,6 +355,7 @@ finalize cancel:
     set r12 into locked[r3];
     add r11 r9 into r13;
     set r13 into deposited[r3];
+    branch.eq true true to end;
 
     // Cancel sell order
     position start_cancel_sell;
@@ -365,6 +366,8 @@ finalize cancel:
     add r15 r2.amount into r17;
     set r17 into deposited[r3];
 
+    // End
+    position end;
 
 function knockdown:
     input r0 as u64.public;
