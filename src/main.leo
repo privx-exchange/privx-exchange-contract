@@ -322,36 +322,36 @@ program privx_exchange.aleo {
         Mapping::set(orders, next_id, order);
     }
 
-    transition cancel(public order_id: u64) {
-        return then finalize(self.caller, order_id);
-    }
+    // transition cancel(public order_id: u64) {
+    //     return then finalize(self.caller, order_id);
+    // }
 
-    finalize cancel(caller: address, order_id: u64) {
-        let order: Order = Mapping::get(orders, order_id);
-        assert_eq(order.status, 0u8);
-        assert_eq(order.placer, caller);
-        let key_pair: Pair = Pair {
-            addr: caller,
-            token_id: order.token_id
-        };
-        let canceled_order: Order = cancel_order(order);
-        Mapping::set(orders, order_id, canceled_order);
-        if order.is_buy == true {
-            // transfer USDT from `locked` to `deposited`
-            let price_decimal: u8 = Mapping::get_or_use(price_decimals, order.token_id, 6u8);
-            let usdt_amount: u64 = order.amount * order.price / (10u64**price_decimal);
-            let usdt_locked: u64 = Mapping::get(locked, key_pair);
-            let usdt_deposited: u64 = Mapping::get(deposited, key_pair);
-            Mapping::set(locked, key_pair, usdt_locked - usdt_amount);
-            Mapping::set(deposited, key_pair, usdt_deposited + usdt_amount);
-        } else {
-            // transfer TOKEN from `locked` to `deposited`
-            let token_locked: u64 = Mapping::get(locked, key_pair);
-            let token_deposited: u64 = Mapping::get(deposited, key_pair);
-            Mapping::set(locked, key_pair, token_locked - order.amount);
-            Mapping::set(deposited, key_pair, token_deposited + order.amount);
-        }
-    }
+    // finalize cancel(caller: address, order_id: u64) {
+    //     let order: Order = Mapping::get(orders, order_id);
+    //     assert_eq(order.status, 0u8);
+    //     assert_eq(order.placer, caller);
+    //     let key_pair: Pair = Pair {
+    //         addr: caller,
+    //         token_id: order.token_id
+    //     };
+    //     let canceled_order: Order = cancel_order(order);
+    //     Mapping::set(orders, order_id, canceled_order);
+    //     if order.is_buy == true {
+    //         // transfer USDT from `locked` to `deposited`
+    //         let price_decimal: u8 = Mapping::get_or_use(price_decimals, order.token_id, 6u8);
+    //         let usdt_amount: u64 = order.amount * order.price / (10u64**price_decimal);
+    //         let usdt_locked: u64 = Mapping::get(locked, key_pair);
+    //         let usdt_deposited: u64 = Mapping::get(deposited, key_pair);
+    //         Mapping::set(locked, key_pair, usdt_locked - usdt_amount);
+    //         Mapping::set(deposited, key_pair, usdt_deposited + usdt_amount);
+    //     } else {
+    //         // transfer TOKEN from `locked` to `deposited`
+    //         let token_locked: u64 = Mapping::get(locked, key_pair);
+    //         let token_deposited: u64 = Mapping::get(deposited, key_pair);
+    //         Mapping::set(locked, key_pair, token_locked - order.amount);
+    //         Mapping::set(deposited, key_pair, token_deposited + order.amount);
+    //     }
+    // }
 
     transition knockdown(public buy_id: u64, public sell_id: u64) {
         return then finalize(buy_id, sell_id);

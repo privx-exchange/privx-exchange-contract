@@ -325,49 +325,49 @@ finalize sell:
 
 
 
-function cancel:
-    input r0 as u64.public;
+// function cancel:
+//     input r0 as u64.public;
 
-    finalize self.caller r0;
+//     finalize self.caller r0;
 
-finalize cancel:
-    input r0 as address.public;
-    input r1 as u64.public;
-    get orders[r1] into r2;
-    assert.eq r2.status 0u8;
-    assert.eq r2.placer r0;
-    cast r0 r2.token_id into r3 as Pair;
-    cast r2.placer r2.is_buy r2.token_id r2.amount r2.dealed_amount r2.price 1u8 into r4 as Order;
-    set r4 into orders[r1];
-    // Fix compile error
-    // is.eq r2.is_buy true into r5;
-    branch.eq r2.is_buy false to start_cancel_sell;
+// finalize cancel:
+//     input r0 as address.public;
+//     input r1 as u64.public;
+//     get orders[r1] into r2;
+//     assert.eq r2.status 0u8;
+//     assert.eq r2.placer r0;
+//     cast r0 r2.token_id into r3 as Pair;
+//     cast r2.placer r2.is_buy r2.token_id r2.amount r2.dealed_amount r2.price 1u8 into r4 as Order;
+//     set r4 into orders[r1];
+//     // Fix compile error
+//     // is.eq r2.is_buy true into r5;
+//     branch.eq r2.is_buy false to start_cancel_sell;
 
-    // Cancel buy order
-    position start_cancel_buy;
-    get.or_use price_decimals[r2.token_id] 6u8 into r6;
-    mul r2.amount r2.price into r7;
-    pow 10u64 r6 into r8;
-    div r7 r8 into r9;
-    get locked[r3] into r10;
-    get deposited[r3] into r11;
-    sub r10 r9 into r12;
-    set r12 into locked[r3];
-    add r11 r9 into r13;
-    set r13 into deposited[r3];
-    branch.eq true true to end;
+//     // Cancel buy order
+//     position start_cancel_buy;
+//     get.or_use price_decimals[r2.token_id] 6u8 into r6;
+//     mul r2.amount r2.price into r7;
+//     pow 10u64 r6 into r8;
+//     div r7 r8 into r9;
+//     get locked[r3] into r10;
+//     get deposited[r3] into r11;
+//     sub r10 r9 into r12;
+//     set r12 into locked[r3];
+//     add r11 r9 into r13;
+//     set r13 into deposited[r3];
+//     branch.eq true true to end;
 
-    // Cancel sell order
-    position start_cancel_sell;
-    get locked[r3] into r14;
-    get deposited[r3] into r15;
-    sub r14 r2.amount into r16;
-    set r16 into locked[r3];
-    add r15 r2.amount into r17;
-    set r17 into deposited[r3];
+//     // Cancel sell order
+//     position start_cancel_sell;
+//     get locked[r3] into r14;
+//     get deposited[r3] into r15;
+//     sub r14 r2.amount into r16;
+//     set r16 into locked[r3];
+//     add r15 r2.amount into r17;
+//     set r17 into deposited[r3];
 
-    // End
-    position end;
+//     // End
+//     position end;
 
 function knockdown:
     input r0 as u64.public;
