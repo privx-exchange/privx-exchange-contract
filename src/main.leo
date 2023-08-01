@@ -77,7 +77,7 @@ program privx_exchange.aleo {
             token_symbol: token_symbol,
             token_logo: token_logo,
             circulating: 0u64,
-            max_supply: max_supply * (10u64**6u8),
+            max_supply: max_supply,
             decimals: 6u8,
         };
         let token_setting: Setting = Setting {
@@ -100,7 +100,7 @@ program privx_exchange.aleo {
             token_symbol: token_symbol,
             token_logo: token_logo,
             circulating: 0u64,
-            max_supply: max_supply * (10u64**6u8),
+            max_supply: max_supply,
             decimals: 6u8,
         };
         Mapping::set(sequence, 0u64, next_id + 1u64);
