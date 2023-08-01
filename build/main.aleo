@@ -87,12 +87,10 @@ finalize register_stablecoin:
     input r2 as u64.public;
     input r3 as TokenLogo.public;
     input r4 as u64.public;
-    pow 10u64 6u8 into r5;
-    mul r4 r5 into r6;
-    cast r0 0u64 r1 r2 r3 0u64 r6 6u8 into r7 as TokenMeta;
-    cast 0u64 into r8 as Setting;
-    set r7 into registry[0u64];
-    set r8 into settings[0u64];
+    cast r0 0u64 r1 r2 r3 0u64 r4 6u8 into r5 as TokenMeta;
+    cast 0u64 into r6 as Setting;
+    set r5 into registry[0u64];
+    set r6 into settings[0u64];
 
 
 function register:
@@ -110,14 +108,12 @@ finalize register:
     input r3 as TokenLogo.public;
     input r4 as u64.public;
     get.or_use sequence[0u64] 1u64 into r5;
-    pow 10u64 6u8 into r6;
-    mul r4 r6 into r7;
-    cast r0 r5 r1 r2 r3 0u64 r7 6u8 into r8 as TokenMeta;
-    add r5 1u64 into r9;
-    set r9 into sequence[0u64];
-    set r8 into registry[r5];
-    cast 0u64 into r10 as Setting;
-    set r10 into settings[r5];
+    cast r0 r5 r1 r2 r3 0u64 r4 6u8 into r6 as TokenMeta;
+    add r5 1u64 into r7;
+    set r7 into sequence[0u64];
+    set r6 into registry[r5];
+    cast 0u64 into r8 as Setting;
+    set r8 into settings[r5];
 
 
 function change_minter:
@@ -323,52 +319,6 @@ finalize sell:
     set r15 into orders[r13];
 
 
-
-
-// function cancel:
-//     input r0 as u64.public;
-
-//     finalize self.caller r0;
-
-// finalize cancel:
-//     input r0 as address.public;
-//     input r1 as u64.public;
-//     get orders[r1] into r2;
-//     assert.eq r2.status 0u8;
-//     assert.eq r2.placer r0;
-//     cast r0 r2.token_id into r3 as Pair;
-//     cast r2.placer r2.is_buy r2.token_id r2.amount r2.dealed_amount r2.price 1u8 into r4 as Order;
-//     set r4 into orders[r1];
-//     // Fix compile error
-//     // is.eq r2.is_buy true into r5;
-//     branch.eq r2.is_buy false to start_cancel_sell;
-
-//     // Cancel buy order
-//     position start_cancel_buy;
-//     get.or_use price_decimals[r2.token_id] 6u8 into r6;
-//     mul r2.amount r2.price into r7;
-//     pow 10u64 r6 into r8;
-//     div r7 r8 into r9;
-//     get locked[r3] into r10;
-//     get deposited[r3] into r11;
-//     sub r10 r9 into r12;
-//     set r12 into locked[r3];
-//     add r11 r9 into r13;
-//     set r13 into deposited[r3];
-//     branch.eq true true to end;
-
-//     // Cancel sell order
-//     position start_cancel_sell;
-//     get locked[r3] into r14;
-//     get deposited[r3] into r15;
-//     sub r14 r2.amount into r16;
-//     set r16 into locked[r3];
-//     add r15 r2.amount into r17;
-//     set r17 into deposited[r3];
-
-//     // End
-//     position end;
-
 function knockdown:
     input r0 as u64.public;
     input r1 as u64.public;
@@ -428,6 +378,8 @@ finalize knockdown:
     get.or_use deposited[r31] 0u64 into r35;
     add r35 r9 into r36;
     set r36 into deposited[r31];
+
+
 
 
 
