@@ -156,10 +156,15 @@ finalize claim:
     input r0 as address.public;
     input r1 as u64.public;
     get settings[r1] into r2;
-    cast r0 r1 into r3 as Pair;
-    get.or_use balance[r3] 0u64 into r4;
-    add r4 r2.claim_amount into r5;
-    set r5 into balance[r3];
+    get registry[r1] into r3;
+    cast r0 r1 into r4 as Pair;
+    add r3.circulating r2.claim_amount into r5;
+    lte r5 r3.max_supply into r6;
+    assert.eq r6 true;
+    cast r3.minter r3.token_id r3.token_name r3.token_symbol r3.token_logo r5 r3.max_supply r3.decimals into r7 as TokenMeta;
+    get.or_use balance[r4] 0u64 into r8;
+    add r8 r2.claim_amount into r9;
+    set r9 into balance[r4];
 
 
 function mint_public:

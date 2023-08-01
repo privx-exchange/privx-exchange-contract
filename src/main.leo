@@ -149,9 +149,22 @@ program privx_exchange_beta4.aleo {
 
     finalize claim(caller: address, public token_id: u64) {
         let token_setting: Setting = Mapping::get(settings, token_id);
+        let token_meta: TokenMeta = Mapping::get(registry, token_id);
         let key_pair: Pair = Pair {
             addr: caller,
             token_id: token_id,
+        };
+        let update_circulating: u64 = token_meta.circulating + token_setting.claim_amount;
+        assert(update_circulating <= token_meta.max_supply);
+        let update_token_meta: TokenMeta = TokenMeta {
+            minter: token_meta.minter,
+            token_id: token_meta.token_id,
+            token_name: token_meta.token_name,
+            token_symbol: token_meta.token_symbol,
+            token_logo: token_meta.token_logo,
+            circulating: update_circulating,
+            max_supply: token_meta.max_supply,
+            decimals: token_meta.decimals,
         };
         let current_amount: u64 = Mapping::get_or_use(balance, key_pair, 0u64);
         Mapping::set(balance, key_pair, current_amount + token_setting.claim_amount);
