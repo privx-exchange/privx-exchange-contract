@@ -1,4 +1,4 @@
-program privx_exchange_beta3.aleo;
+program privx_exchange_beta4.aleo;
 
 struct Pair:
     addr as address;
