@@ -1,7 +1,9 @@
 // The 'privx_exchange' program.
+import privx_account.leo;
+
 program privx_exchange_beta4.aleo {
     struct Pair {
-        addr: address,
+        account: field,
         token_id: u64,
     }
 
@@ -34,7 +36,7 @@ program privx_exchange_beta4.aleo {
     }
 
     struct Order {
-        placer: address,
+        account: field,
         is_buy: bool,
         token_id: u64,
         amount: u64,
@@ -63,6 +65,16 @@ program privx_exchange_beta4.aleo {
 
     // price decimal
     mapping price_decimals: u64 => u8;
+
+    function default_hash_account(addr: address) -> field {
+        let account_hash: field = BHP256::hash_to_field(addr) + BHP256::hash_to_field(0u64);
+        return account_hash;
+    }
+
+    function hash_account_to_field(account: privx_account.leo/Account) -> field {
+        let account_hash: field = BHP256::hash_to_field(account.owner) + BHP256::hash_to_field(account.id);
+        return account_hash;
+    }
 
     // TokenId = 0 is the stablecoin to trade.
     transition register_stablecoin(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public max_supply: u64) {
@@ -143,15 +155,16 @@ program privx_exchange_beta4.aleo {
         Mapping::set(settings, token_id, new_setting);
     }
 
-    transition claim(public token_id: u64) {
-        return then finalize(self.caller, token_id);
+    transition claim(public token_id: u64, account: privx_account.leo/Account) {
+        let account_hash: field = hash_account_to_field(account);
+        return then finalize(account_hash, token_id);
     }
 
-    finalize claim(caller: address, public token_id: u64) {
+    finalize claim(account: field, public token_id: u64) {
         let token_setting: Setting = Mapping::get(settings, token_id);
         let token_meta: TokenMeta = Mapping::get(registry, token_id);
         let key_pair: Pair = Pair {
-            addr: caller,
+            account: account,
             token_id: token_id,
         };
         let update_circulating: u64 = token_meta.circulating + token_setting.claim_amount;
@@ -171,10 +184,11 @@ program privx_exchange_beta4.aleo {
     }
 
     transition mint_public(public token_id: u64, public to: address, public amount: u64) {
-        return then finalize(self.caller, token_id, to, amount);
+        let to_account: field = default_hash_account(to);
+        return then finalize(self.caller, token_id, to_account, amount);
     }
 
-    finalize mint_public(minter: address, token_id: u64, to: address, amount: u64) {
+    finalize mint_public(minter: address, token_id: u64, to_account: field, amount: u64) {
         // Transaction will revert if the token_id is not exist.
         let token_meta: TokenMeta = Mapping::get(registry, token_id);
         assert_eq(minter, token_meta.minter);
@@ -197,7 +211,7 @@ program privx_exchange_beta4.aleo {
 
         // Increase the balance of `to`
         let key_pair: Pair = Pair {
-            addr: to,
+            account: to_account,
             token_id: token_id
         };
         let current_amount: u64 = Mapping::get_or_use(balance, key_pair, 0u64);
@@ -205,18 +219,20 @@ program privx_exchange_beta4.aleo {
     }
 
     transition transfer_public(public token_id: u64, public to: address, public amount: u64) {
-        return then finalize(token_id, self.caller, to, amount);
+        let from_account: field = default_hash_account(self.caller);
+        let to_account: field = default_hash_account(to);
+        return then finalize(token_id, from_account, to_account, amount);
     }
 
-    finalize transfer_public(token_id: u64, from: address, to: address, amount: u64) {
+    finalize transfer_public(token_id: u64, from_account: field, to_account: field, amount: u64) {
         // let from_key: Pair = new_pair(token_id, from);
         let from_key: Pair = Pair {
-            addr: from,
+            account: from_account,
             token_id: token_id,
         };
         // let to_key: Pair = new_pair(token_id, to);
         let to_key: Pair = Pair {
-            addr: to,
+            account: to_account,
             token_id: token_id
         };
 
@@ -229,50 +245,64 @@ program privx_exchange_beta4.aleo {
         Mapping::set(balance, to_key, to_current_balance);
     }
     
-    transition deposit(token_id: u64, amount: u64) {
-        return then finalize(self.caller, token_id, amount);
+    // Transfer from `default_balance_account` to `deposit_account`
+    transition deposit(token_id: u64, amount: u64, account: privx_account.leo/Account) {
+        let from_account_hash: field = default_hash_account(self.caller);
+        let to_account_hash: field = hash_account_to_field(account);
+        return then finalize(from_account_hash, to_account_hash, token_id, amount);
     }
 
-    finalize deposit(caller: address, token_id: u64, amount: u64) {
-        let key_pair: Pair = Pair {
-            addr: caller,
+    finalize deposit(from_account: field, to_account: field, token_id: u64, amount: u64) {
+        let from_pair: Pair = Pair {
+            account: from_account,
             token_id: token_id,
         };
-        let current_balance: u64 = Mapping::get(balance, key_pair);
-        Mapping::set(balance, key_pair, current_balance - amount);
-        let current_deposited: u64 = Mapping::get_or_use(deposited, key_pair, 0u64);
-        Mapping::set(deposited, key_pair, current_deposited + amount);
+        let to_pair: Pair = Pair {
+            account: to_account,
+            token_id: token_id
+        };
+        let current_balance: u64 = Mapping::get(balance, from_pair);
+        Mapping::set(balance, from_pair, current_balance - amount);
+        let current_deposited: u64 = Mapping::get_or_use(deposited, to_pair, 0u64);
+        Mapping::set(deposited, to_pair, current_deposited + amount);
     }
 
-    transition withdraw(token_id: u64, amount: u64) {
-        return then finalize(self.caller, token_id, amount);
+    transition withdraw(token_id: u64, amount: u64, from_account: privx_account.leo/Account) {
+        let from_account_hash: field = hash_account_to_field(from_account);
+        let to_account_hash: field = default_hash_account(self.caller);
+        return then finalize(from_account_hash, to_account_hash, token_id, amount);
     }
 
-    finalize withdraw(caller: address, token_id: u64, amount: u64) {
-        let key_pair: Pair = Pair {
-            addr: caller,
+    finalize withdraw(from_account: field, to_account: field, token_id: u64, amount: u64) {
+        let from_pair: Pair = Pair {
+            account: from_account,
             token_id: token_id,
         };
-        let current_deposited: u64 = Mapping::get_or_use(deposited, key_pair, 0u64);
-        Mapping::set(deposited, key_pair, current_deposited - amount);
-        let current_balance: u64 = Mapping::get(balance, key_pair);
-        Mapping::set(balance, key_pair, current_balance + amount);
+        let to_pair: Pair = Pair {
+            account: to_account,
+            token_id: token_id
+        };
+        let current_deposited: u64 = Mapping::get_or_use(deposited, from_pair, 0u64);
+        Mapping::set(deposited, from_pair, current_deposited - amount);
+        let current_balance: u64 = Mapping::get(balance, to_pair);
+        Mapping::set(balance, to_pair, current_balance + amount);
     }
 
     // Assume that token_id 0 is the stablecoin
-    transition buy(public token_id: u64,public amount: u64,public price: u64) {
+    transition buy(public token_id: u64,public amount: u64, public price: u64, account: privx_account.leo/Account.record) {
         assert(amount > 0u64);
         assert(price > 0u64);
         assert(token_id > 0u64);
-        return then finalize(self.caller, token_id, amount, price);
+        let account_hash: field = hash_account_to_field(account);
+        return then finalize(account_hash, token_id, amount, price);
     }
 
-    finalize buy(buyer: address, token_id: u64, token_amount: u64, price: u64) {
+    finalize buy(account: field, token_id: u64, token_amount: u64, price: u64) {
         let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
         let usdt_amount: u64 = token_amount * price / (10u64**price_decimal);
         // let buyer_key: Pair = new_pair(0u64, buyer);
         let buyer_key: Pair = Pair {
-            addr: buyer,
+            account: account,
             token_id: 0u64,
         };
 
@@ -287,7 +317,7 @@ program privx_exchange_beta4.aleo {
         Mapping::set(sequence, 1u64, next_id + 1u64);
         // let order: Order = new_order(buyer, token_id, token_amount, price, true);
         let order: Order = Order {
-            placer: buyer,
+            account: account,
             is_buy: true,
             token_id: token_id,
             amount: token_amount,
@@ -298,19 +328,20 @@ program privx_exchange_beta4.aleo {
         Mapping::set(orders, next_id, order);
     }
 
-    transition sell(public token_id: u64,public amount: u64,public price: u64) {
+    transition sell(public token_id: u64, public amount: u64, public price: u64, account: privx_account.leo/Account.record) {
         assert(amount > 0u64);
         assert(price > 0u64);
         assert(token_id > 0u64);
-        return then finalize(self.caller, token_id, amount, price);
+        let account_hash: field = hash_account_to_field(account);
+        return then finalize(account_hash, token_id, amount, price);
     }
 
-    finalize sell(seller: address, token_id: u64, token_amount: u64, price: u64) {
+    finalize sell(account: field, token_id: u64, token_amount: u64, price: u64) {
         let price_decimal: u8 = Mapping::get_or_use(price_decimals, token_id, 6u8);
         let usdt_amount: u64 = token_amount * price / (10u64**price_decimal);
         // let seller_key: Pair = new_pair(token_id, seller);
         let seller_key: Pair = Pair {
-            addr: seller,
+            account: account,
             token_id: token_id,
         };
 
@@ -324,7 +355,7 @@ program privx_exchange_beta4.aleo {
         Mapping::set(sequence, 1u64, next_id + 1u64);
         // let order: Order = new_order(seller, token_id, token_amount, price, false);
         let order: Order = Order {
-            placer: seller,
+            account: account,
             is_buy: false,
             token_id: token_id,
             amount: token_amount,
@@ -404,7 +435,7 @@ program privx_exchange_beta4.aleo {
         // 2. Update the order'status
         // let updated_buy_order: Order = update_order_amount(buy_order, token_amount);
         let updated_buy_order: Order = Order {
-            placer: buy_order.placer,
+            account: buy_order.account,
             is_buy: buy_order.is_buy,
             token_id: buy_order.token_id,
             amount: buy_order.amount - token_amount,
@@ -414,7 +445,7 @@ program privx_exchange_beta4.aleo {
         };
         // let updated_sell_order: Order = update_order_amount(sell_order, token_amount);
         let updated_sell_order: Order = Order {
-            placer: sell_order.placer,
+            account: sell_order.account,
             is_buy: sell_order.is_buy,
             token_id: sell_order.token_id,
             amount: sell_order.amount - token_amount,
@@ -428,12 +459,12 @@ program privx_exchange_beta4.aleo {
         // 3. Transfer `usdt` from buyer's locked to seller's deposited
         // let buyer_usdt_key: Pair = new_pair(0u64, buy_order.placer);
         let buyer_usdt_key: Pair = Pair {
-            addr: buy_order.placer,
+            account: buy_order.account,
             token_id: 0u64
         };
         // let seller_usdt_key: Pair = new_pair(0u64, sell_order.placer);
         let seller_usdt_key: Pair = Pair {
-            addr: sell_order.placer,
+            account: sell_order.account,
             token_id: 0u64
         };
         let buyer_usdt_locked: u64 = Mapping::get(locked, buyer_usdt_key);
@@ -447,11 +478,11 @@ program privx_exchange_beta4.aleo {
 
         // 5. Transfer `token` from seller's locked to buyer's deposited
         let buyer_token_key: Pair = Pair {
-            addr: buy_order.placer,
+            account: buy_order.account,
             token_id: buy_order.token_id,
         };
         let seller_token_key: Pair = Pair {
-            addr: sell_order.placer,
+            account: sell_order.account,
             token_id: sell_order.token_id,
         };
         let seller_token_locked: u64 = Mapping::get(locked, seller_token_key);
@@ -473,16 +504,16 @@ program privx_exchange_beta4.aleo {
         };
     }
 
-    inline new_pair(token_id: u64, addr: address) -> Pair {
+    inline new_pair(token_id: u64, account: field) -> Pair {
         return Pair {
             token_id: token_id,
-            addr: addr,
+            account: account,
         };
     }
 
-    inline new_order(placer: address, token_id: u64, amount: u64, price: u64, is_buy: bool) -> Order {
+    inline new_order(account: field, token_id: u64, amount: u64, price: u64, is_buy: bool) -> Order {
         return Order {
-            placer: placer,
+            account: account,
             is_buy: is_buy,
             token_id: token_id,
             amount: amount,
@@ -494,7 +525,7 @@ program privx_exchange_beta4.aleo {
 
     inline finish_order(order: Order) -> Order {
         return Order {
-            placer: order.placer,
+            account: order.account,
             is_buy: order.is_buy,
             token_id: order.token_id,
             amount: 0u64,
@@ -506,7 +537,7 @@ program privx_exchange_beta4.aleo {
 
     inline cancel_order(order: Order) -> Order {
         return Order {
-            placer: order.placer,
+            account: order.account,
             is_buy: order.is_buy,
             token_id: order.token_id,
             amount: order.amount,
@@ -518,7 +549,7 @@ program privx_exchange_beta4.aleo {
 
     inline update_order_amount(order: Order, dealed_token_amount: u64) -> Order {
         return Order {
-            placer: order.placer,
+            account: order.account,
             is_buy: order.is_buy,
             token_id: order.token_id,
             amount: order.amount - dealed_token_amount,
