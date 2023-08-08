@@ -50,6 +50,12 @@ program privx_exchange_beta4.aleo {
         claim_amount: u64,
     }
 
+    record Token {
+        owner: address,
+        token_id: u64,
+        amount: u64,
+    }
+
     mapping balance: Pair => u64;
     mapping registry: u64 => TokenMeta;
     mapping settings: u64 => Setting;
