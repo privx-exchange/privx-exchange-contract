@@ -34,6 +34,11 @@ struct Order:
 struct Setting:
     claim_amount as u64;
 
+record Token:
+    owner as address.private;
+    token_id as u64.private;
+    amount as u64.private;
+
 
 mapping balance:
 	key left as Pair.public;
@@ -209,6 +214,41 @@ finalize mint_public:
     set r10 into balance[r8];
 
 
+function transfer_private_to_public:
+    input r0 as Token.record;
+    call default_hash_account self.caller into r1;
+
+    finalize r1 r0.token_id r0.amount;
+
+finalize transfer_private_to_public:
+    input r0 as field.public;
+    input r1 as u64.public;
+    input r2 as u64.public;
+    cast r0 r1 into r3 as Pair;
+    get.or_use balance[r3] 0u64 into r4;
+    add r4 r2 into r5;
+    set r5 into balance[r3];
+
+
+function transfer_public_to_private:
+    input r0 as u64.private;
+    input r1 as u64.private;
+    cast self.caller r0 r1 into r2 as Token.record;
+    call default_hash_account self.caller into r3;
+    output r2 as Token.record;
+
+    finalize r3 r0 r1;
+
+finalize transfer_public_to_private:
+    input r0 as field.public;
+    input r1 as u64.public;
+    input r2 as u64.public;
+    cast r0 r1 into r3 as Pair;
+    get balance[r3] into r4;
+    sub r4 r2 into r5;
+    set r5 into balance[r3];
+
+
 function transfer_public:
     input r0 as u64.public;
     input r1 as address.public;
@@ -231,6 +271,26 @@ finalize transfer_public:
     add r7 r3 into r9;
     set r8 into balance[r4];
     set r9 into balance[r5];
+
+
+function transfer_private:
+    input r0 as Token.record;
+    input r1 as address.private;
+    input r2 as u64.private;
+    sub r0.amount r2 into r3;
+    cast r0.owner r0.token_id r3 into r4 as Token.record;
+    cast r0.owner r0.token_id r2 into r5 as Token.record;
+    output r4 as Token.record;
+    output r5 as Token.record;
+
+
+function combine:
+    input r0 as Token.record;
+    input r1 as Token.record;
+    assert.eq r0.token_id r1.token_id;
+    add r0.amount r1.amount into r2;
+    cast self.caller r0.token_id r2 into r3 as Token.record;
+    output r3 as Token.record;
 
 
 function deposit:

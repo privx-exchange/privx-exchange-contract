@@ -223,6 +223,40 @@ program privx_exchange_beta4.aleo {
         let current_amount: u64 = Mapping::get_or_use(balance, key_pair, 0u64);
         Mapping::set(balance, key_pair, current_amount + amount);
     }
+    /* Transfer */
+
+    transition transfer_private_to_public(token: Token) {
+        let to_account: field = default_hash_account(self.caller);
+        return then finalize(to_account, token.token_id, token.amount);
+    }
+
+    finalize transfer_private_to_public(to_account: field, token_id: u64, amount: u64) {
+        let to_key: Pair = Pair {
+            account: to_account,
+            token_id: token_id,
+        };
+        let from_current_balance: u64 = Mapping::get_or_use(balance, to_key, 0u64);
+        Mapping::set(balance, to_key, from_current_balance + amount);
+    }
+
+    transition transfer_public_to_private(token_id: u64, amount: u64) -> Token {
+        let token: Token = Token {
+            owner: self.caller,
+            token_id: token_id,
+            amount: amount
+        };
+        let from_account: field = default_hash_account(self.caller);
+        return token then finalize(from_account, token_id, amount);
+    }
+
+    finalize transfer_public_to_private(from_account: field, token_id: u64, amount: u64) {
+        let from_key: Pair = Pair {
+            account: from_account,
+            token_id: token_id,
+        };
+        let from_current_balance: u64 = Mapping::get(balance, from_key);
+        Mapping::set(balance, from_key, from_current_balance - amount);
+    }
 
     transition transfer_public(public token_id: u64, public to: address, public amount: u64) {
         let from_account: field = default_hash_account(self.caller);
@@ -251,6 +285,31 @@ program privx_exchange_beta4.aleo {
         Mapping::set(balance, to_key, to_current_balance);
     }
     
+    transition transfer_private(token: Token, to: address, amount: u64) -> (Token, Token) {
+        let token_from: Token = Token {
+            owner: token.owner,
+            token_id: token.token_id,
+            amount: token.amount - amount
+        };
+        let token_to: Token = Token {
+            owner: token.owner,
+            token_id: token.token_id,
+            amount: amount
+        };
+        return (token_from, token_to);
+    }
+
+    transition combine(token1: Token, token2: Token) -> Token {
+        assert_eq(token1.token_id, token2.token_id);
+        let token: Token = Token {
+            owner: self.caller,
+            token_id: token1.token_id,
+            amount: token1.amount + token2.amount
+        };
+        return token;
+    }
+
+
     // Transfer from `default_balance_account` to `deposit_account`
     transition deposit(token_id: u64, amount: u64, account: privx_account.leo/Account) {
         let from_account_hash: field = default_hash_account(self.caller);
