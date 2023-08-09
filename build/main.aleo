@@ -1,7 +1,9 @@
+import privx_account.aleo;
 program privx_exchange_beta4.aleo;
 
+
 struct Pair:
-    addr as address;
+    account as field;
     token_id as u64;
 
 struct TokenLogo:
@@ -21,7 +23,7 @@ struct TokenMeta:
     decimals as u8;
 
 struct Order:
-    placer as address;
+    account as field;
     is_buy as boolean;
     token_id as u64;
     amount as u64;
@@ -31,6 +33,11 @@ struct Order:
 
 struct Setting:
     claim_amount as u64;
+
+record Token:
+    owner as address.private;
+    token_id as u64.private;
+    amount as u64.private;
 
 
 mapping balance:
@@ -71,6 +78,12 @@ mapping sequence:
 mapping price_decimals:
 	key left as u64.public;
 	value right as u8.public;
+
+closure hash_account_to_field:
+    input r0 as privx_account.aleo/Account.record;
+    hash.bhp256 r0.owner into r1 as field;    hash.bhp256 r0.id into r2 as field;    add r1 r2 into r3;
+    output r3 as field;
+
 
 function register_stablecoin:
     input r0 as u128.public;
@@ -149,11 +162,13 @@ finalize change_setting:
 
 function claim:
     input r0 as u64.public;
+    input r1 as privx_account.aleo/Account.record;
+    call hash_account_to_field r1 into r2;
 
-    finalize self.caller r0;
+    finalize r2 r0;
 
 finalize claim:
-    input r0 as address.public;
+    input r0 as field.public;
     input r1 as u64.public;
     get settings[r1] into r2;
     get registry[r1] into r3;
@@ -169,7 +184,7 @@ finalize claim:
 
 function mint_public:
     input r0 as u64.public;
-    input r1 as address.public;
+    input r1 as field.public;
     input r2 as u64.public;
 
     finalize self.caller r0 r1 r2;
@@ -177,7 +192,7 @@ function mint_public:
 finalize mint_public:
     input r0 as address.public;
     input r1 as u64.public;
-    input r2 as address.public;
+    input r2 as field.public;
     input r3 as u64.public;
     get registry[r1] into r4;
     assert.eq r0 r4.minter;
@@ -192,17 +207,56 @@ finalize mint_public:
     set r10 into balance[r8];
 
 
+function transfer_private_to_public:
+    input r0 as Token.record;
+    input r1 as privx_account.aleo/Account.record;
+    call hash_account_to_field r1 into r2;
+
+    finalize r2 r0.token_id r0.amount;
+
+finalize transfer_private_to_public:
+    input r0 as field.public;
+    input r1 as u64.public;
+    input r2 as u64.public;
+    cast r0 r1 into r3 as Pair;
+    get.or_use balance[r3] 0u64 into r4;
+    add r4 r2 into r5;
+    set r5 into balance[r3];
+
+
+function transfer_public_to_private:
+    input r0 as u64.private;
+    input r1 as u64.private;
+    input r2 as privx_account.aleo/Account.record;
+    cast self.caller r0 r1 into r3 as Token.record;
+    call hash_account_to_field r2 into r4;
+    output r3 as Token.record;
+
+    finalize r4 r0 r1;
+
+finalize transfer_public_to_private:
+    input r0 as field.public;
+    input r1 as u64.public;
+    input r2 as u64.public;
+    cast r0 r1 into r3 as Pair;
+    get balance[r3] into r4;
+    sub r4 r2 into r5;
+    set r5 into balance[r3];
+
+
 function transfer_public:
     input r0 as u64.public;
-    input r1 as address.public;
+    input r1 as field.public;
     input r2 as u64.public;
+    input r3 as privx_account.aleo/Account.record;
+    call hash_account_to_field r3 into r4;
 
-    finalize r0 self.caller r1 r2;
+    finalize r0 r4 r1 r2;
 
 finalize transfer_public:
     input r0 as u64.public;
-    input r1 as address.public;
-    input r2 as address.public;
+    input r1 as field.public;
+    input r2 as field.public;
     input r3 as u64.public;
     cast r1 r0 into r4 as Pair;
     cast r2 r0 into r5 as Pair;
@@ -214,14 +268,36 @@ finalize transfer_public:
     set r9 into balance[r5];
 
 
+function transfer_private:
+    input r0 as Token.record;
+    input r1 as address.private;
+    input r2 as u64.private;
+    sub r0.amount r2 into r3;
+    cast r0.owner r0.token_id r3 into r4 as Token.record;
+    cast r0.owner r0.token_id r2 into r5 as Token.record;
+    output r4 as Token.record;
+    output r5 as Token.record;
+
+
+function join:
+    input r0 as Token.record;
+    input r1 as Token.record;
+    assert.eq r0.token_id r1.token_id;
+    add r0.amount r1.amount into r2;
+    cast self.caller r0.token_id r2 into r3 as Token.record;
+    output r3 as Token.record;
+
+
 function deposit:
     input r0 as u64.private;
     input r1 as u64.private;
+    input r2 as privx_account.aleo/Account.record;
+    call hash_account_to_field r2 into r3;
 
-    finalize self.caller r0 r1;
+    finalize r3 r0 r1;
 
 finalize deposit:
-    input r0 as address.public;
+    input r0 as field.public;
     input r1 as u64.public;
     input r2 as u64.public;
     cast r0 r1 into r3 as Pair;
@@ -236,11 +312,13 @@ finalize deposit:
 function withdraw:
     input r0 as u64.private;
     input r1 as u64.private;
+    input r2 as privx_account.aleo/Account.record;
+    call hash_account_to_field r2 into r3;
 
-    finalize self.caller r0 r1;
+    finalize r3 r0 r1;
 
 finalize withdraw:
-    input r0 as address.public;
+    input r0 as field.public;
     input r1 as u64.public;
     input r2 as u64.public;
     cast r0 r1 into r3 as Pair;
@@ -256,17 +334,19 @@ function buy:
     input r0 as u64.public;
     input r1 as u64.public;
     input r2 as u64.public;
-    gt r1 0u64 into r3;
-    assert.eq r3 true;
-    gt r2 0u64 into r4;
+    input r3 as privx_account.aleo/Account.record;
+    gt r1 0u64 into r4;
     assert.eq r4 true;
-    gt r0 0u64 into r5;
+    gt r2 0u64 into r5;
     assert.eq r5 true;
+    gt r0 0u64 into r6;
+    assert.eq r6 true;
+    call hash_account_to_field r3 into r7;
 
-    finalize self.caller r0 r1 r2;
+    finalize r7 r0 r1 r2;
 
 finalize buy:
-    input r0 as address.public;
+    input r0 as field.public;
     input r1 as u64.public;
     input r2 as u64.public;
     input r3 as u64.public;
@@ -292,17 +372,19 @@ function sell:
     input r0 as u64.public;
     input r1 as u64.public;
     input r2 as u64.public;
-    gt r1 0u64 into r3;
-    assert.eq r3 true;
-    gt r2 0u64 into r4;
+    input r3 as privx_account.aleo/Account.record;
+    gt r1 0u64 into r4;
     assert.eq r4 true;
-    gt r0 0u64 into r5;
+    gt r2 0u64 into r5;
     assert.eq r5 true;
+    gt r0 0u64 into r6;
+    assert.eq r6 true;
+    call hash_account_to_field r3 into r7;
 
-    finalize self.caller r0 r1 r2;
+    finalize r7 r0 r1 r2;
 
 finalize sell:
-    input r0 as address.public;
+    input r0 as field.public;
     input r1 as u64.public;
     input r2 as u64.public;
     input r3 as u64.public;
@@ -358,14 +440,14 @@ finalize knockdown:
     sub r15 r12 into r16;
     sub r2.amount r9 into r17;
     add r2.dealed_amount r9 into r18;
-    cast r2.placer r2.is_buy r2.token_id r17 r18 r2.price 0u8 into r19 as Order;
+    cast r2.account r2.is_buy r2.token_id r17 r18 r2.price 0u8 into r19 as Order;
     sub r3.amount r9 into r20;
     add r3.dealed_amount r9 into r21;
-    cast r3.placer r3.is_buy r3.token_id r20 r21 r3.price 0u8 into r22 as Order;
+    cast r3.account r3.is_buy r3.token_id r20 r21 r3.price 0u8 into r22 as Order;
     set r19 into orders[r0];
     set r22 into orders[r1];
-    cast r2.placer 0u64 into r23 as Pair;
-    cast r3.placer 0u64 into r24 as Pair;
+    cast r2.account 0u64 into r23 as Pair;
+    cast r3.account 0u64 into r24 as Pair;
     get locked[r23] into r25;
     sub r25 r15 into r26;
     set r26 into locked[r23];
@@ -375,8 +457,8 @@ finalize knockdown:
     get deposited[r23] into r29;
     add r29 r16 into r30;
     set r30 into deposited[r23];
-    cast r2.placer r2.token_id into r31 as Pair;
-    cast r3.placer r3.token_id into r32 as Pair;
+    cast r2.account r2.token_id into r31 as Pair;
+    cast r3.account r3.token_id into r32 as Pair;
     get locked[r32] into r33;
     sub r33 r9 into r34;
     set r34 into locked[r32];
