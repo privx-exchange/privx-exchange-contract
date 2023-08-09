@@ -72,11 +72,6 @@ program privx_exchange_beta4.aleo {
     // price decimal
     mapping price_decimals: u64 => u8;
 
-    function default_hash_account(addr: address) -> field {
-        let account_hash: field = BHP256::hash_to_field(addr) + BHP256::hash_to_field(0u64);
-        return account_hash;
-    }
-
     function hash_account_to_field(account: privx_account.leo/Account) -> field {
         let account_hash: field = BHP256::hash_to_field(account.owner) + BHP256::hash_to_field(account.id);
         return account_hash;
@@ -189,8 +184,7 @@ program privx_exchange_beta4.aleo {
         Mapping::set(balance, key_pair, current_amount + token_setting.claim_amount);
     }
 
-    transition mint_public(public token_id: u64, public to: address, public amount: u64) {
-        let to_account: field = default_hash_account(to);
+    transition mint_public(public token_id: u64, public to_account: field, public amount: u64) {
         return then finalize(self.caller, token_id, to_account, amount);
     }
 
@@ -225,8 +219,8 @@ program privx_exchange_beta4.aleo {
     }
     /* Transfer */
 
-    transition transfer_private_to_public(token: Token) {
-        let to_account: field = default_hash_account(self.caller);
+    transition transfer_private_to_public(token: Token, account: privx_account.leo/Account) {
+        let to_account: field = hash_account_to_field(account);
         return then finalize(to_account, token.token_id, token.amount);
     }
 
@@ -239,13 +233,13 @@ program privx_exchange_beta4.aleo {
         Mapping::set(balance, to_key, from_current_balance + amount);
     }
 
-    transition transfer_public_to_private(token_id: u64, amount: u64) -> Token {
+    transition transfer_public_to_private(token_id: u64, amount: u64, account: privx_account.leo/Account) -> Token {
         let token: Token = Token {
             owner: self.caller,
             token_id: token_id,
             amount: amount
         };
-        let from_account: field = default_hash_account(self.caller);
+        let from_account: field = hash_account_to_field(account);
         return token then finalize(from_account, token_id, amount);
     }
 
@@ -258,9 +252,8 @@ program privx_exchange_beta4.aleo {
         Mapping::set(balance, from_key, from_current_balance - amount);
     }
 
-    transition transfer_public(public token_id: u64, public to: address, public amount: u64) {
-        let from_account: field = default_hash_account(self.caller);
-        let to_account: field = default_hash_account(to);
+    transition transfer_public(public token_id: u64, public to_account: field, public amount: u64, from: privx_account.leo/Account) {
+        let from_account: field = hash_account_to_field(from);
         return then finalize(token_id, from_account, to_account, amount);
     }
 
@@ -299,7 +292,7 @@ program privx_exchange_beta4.aleo {
         return (token_from, token_to);
     }
 
-    transition combine(token1: Token, token2: Token) -> Token {
+    transition join(token1: Token, token2: Token) -> Token {
         assert_eq(token1.token_id, token2.token_id);
         let token: Token = Token {
             owner: self.caller,
@@ -312,45 +305,35 @@ program privx_exchange_beta4.aleo {
 
     // Transfer from `default_balance_account` to `deposit_account`
     transition deposit(token_id: u64, amount: u64, account: privx_account.leo/Account) {
-        let from_account_hash: field = default_hash_account(self.caller);
-        let to_account_hash: field = hash_account_to_field(account);
-        return then finalize(from_account_hash, to_account_hash, token_id, amount);
+        let account_hash: field = hash_account_to_field(account);
+        return then finalize(account_hash, token_id, amount);
     }
 
-    finalize deposit(from_account: field, to_account: field, token_id: u64, amount: u64) {
-        let from_pair: Pair = Pair {
-            account: from_account,
+    finalize deposit(account: field, token_id: u64, amount: u64) {
+        let pair: Pair = Pair {
+            account: account,
             token_id: token_id,
         };
-        let to_pair: Pair = Pair {
-            account: to_account,
-            token_id: token_id
-        };
-        let current_balance: u64 = Mapping::get(balance, from_pair);
-        Mapping::set(balance, from_pair, current_balance - amount);
-        let current_deposited: u64 = Mapping::get_or_use(deposited, to_pair, 0u64);
-        Mapping::set(deposited, to_pair, current_deposited + amount);
+        let current_balance: u64 = Mapping::get(balance, pair);
+        Mapping::set(balance, pair, current_balance - amount);
+        let current_deposited: u64 = Mapping::get_or_use(deposited, pair, 0u64);
+        Mapping::set(deposited, pair, current_deposited + amount);
     }
 
-    transition withdraw(token_id: u64, amount: u64, from_account: privx_account.leo/Account) {
-        let from_account_hash: field = hash_account_to_field(from_account);
-        let to_account_hash: field = default_hash_account(self.caller);
-        return then finalize(from_account_hash, to_account_hash, token_id, amount);
+    transition withdraw(token_id: u64, amount: u64, account: privx_account.leo/Account) {
+        let account_hash: field = hash_account_to_field(account);
+        return then finalize(account_hash, token_id, amount);
     }
 
-    finalize withdraw(from_account: field, to_account: field, token_id: u64, amount: u64) {
-        let from_pair: Pair = Pair {
-            account: from_account,
+    finalize withdraw(account: field, token_id: u64, amount: u64) {
+        let pair: Pair = Pair {
+            account: account,
             token_id: token_id,
         };
-        let to_pair: Pair = Pair {
-            account: to_account,
-            token_id: token_id
-        };
-        let current_deposited: u64 = Mapping::get_or_use(deposited, from_pair, 0u64);
-        Mapping::set(deposited, from_pair, current_deposited - amount);
-        let current_balance: u64 = Mapping::get(balance, to_pair);
-        Mapping::set(balance, to_pair, current_balance + amount);
+        let current_deposited: u64 = Mapping::get_or_use(deposited, pair, 0u64);
+        Mapping::set(deposited, pair, current_deposited - amount);
+        let current_balance: u64 = Mapping::get(balance, pair);
+        Mapping::set(balance, pair, current_balance + amount);
     }
 
     // Assume that token_id 0 is the stablecoin

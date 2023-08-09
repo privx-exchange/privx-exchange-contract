@@ -79,12 +79,6 @@ mapping price_decimals:
 	key left as u64.public;
 	value right as u8.public;
 
-closure default_hash_account:
-    input r0 as address;
-    hash.bhp256 r0 into r1 as field;    hash.bhp256 0u64 into r2 as field;    add r1 r2 into r3;
-    output r3 as field;
-
-
 closure hash_account_to_field:
     input r0 as privx_account.aleo/Account.record;
     hash.bhp256 r0.owner into r1 as field;    hash.bhp256 r0.id into r2 as field;    add r1 r2 into r3;
@@ -190,11 +184,10 @@ finalize claim:
 
 function mint_public:
     input r0 as u64.public;
-    input r1 as address.public;
+    input r1 as field.public;
     input r2 as u64.public;
-    call default_hash_account r1 into r3;
 
-    finalize self.caller r0 r3 r2;
+    finalize self.caller r0 r1 r2;
 
 finalize mint_public:
     input r0 as address.public;
@@ -216,9 +209,10 @@ finalize mint_public:
 
 function transfer_private_to_public:
     input r0 as Token.record;
-    call default_hash_account self.caller into r1;
+    input r1 as privx_account.aleo/Account.record;
+    call hash_account_to_field r1 into r2;
 
-    finalize r1 r0.token_id r0.amount;
+    finalize r2 r0.token_id r0.amount;
 
 finalize transfer_private_to_public:
     input r0 as field.public;
@@ -233,11 +227,12 @@ finalize transfer_private_to_public:
 function transfer_public_to_private:
     input r0 as u64.private;
     input r1 as u64.private;
-    cast self.caller r0 r1 into r2 as Token.record;
-    call default_hash_account self.caller into r3;
-    output r2 as Token.record;
+    input r2 as privx_account.aleo/Account.record;
+    cast self.caller r0 r1 into r3 as Token.record;
+    call hash_account_to_field r2 into r4;
+    output r3 as Token.record;
 
-    finalize r3 r0 r1;
+    finalize r4 r0 r1;
 
 finalize transfer_public_to_private:
     input r0 as field.public;
@@ -251,12 +246,12 @@ finalize transfer_public_to_private:
 
 function transfer_public:
     input r0 as u64.public;
-    input r1 as address.public;
+    input r1 as field.public;
     input r2 as u64.public;
-    call default_hash_account self.caller into r3;
-    call default_hash_account r1 into r4;
+    input r3 as privx_account.aleo/Account.record;
+    call hash_account_to_field r3 into r4;
 
-    finalize r0 r3 r4 r2;
+    finalize r0 r4 r1 r2;
 
 finalize transfer_public:
     input r0 as u64.public;
@@ -284,7 +279,7 @@ function transfer_private:
     output r5 as Token.record;
 
 
-function combine:
+function join:
     input r0 as Token.record;
     input r1 as Token.record;
     assert.eq r0.token_id r1.token_id;
@@ -297,24 +292,21 @@ function deposit:
     input r0 as u64.private;
     input r1 as u64.private;
     input r2 as privx_account.aleo/Account.record;
-    call default_hash_account self.caller into r3;
-    call hash_account_to_field r2 into r4;
+    call hash_account_to_field r2 into r3;
 
-    finalize r3 r4 r0 r1;
+    finalize r3 r0 r1;
 
 finalize deposit:
     input r0 as field.public;
-    input r1 as field.public;
+    input r1 as u64.public;
     input r2 as u64.public;
-    input r3 as u64.public;
-    cast r0 r2 into r4 as Pair;
-    cast r1 r2 into r5 as Pair;
-    get balance[r4] into r6;
-    sub r6 r3 into r7;
-    set r7 into balance[r4];
-    get.or_use deposited[r5] 0u64 into r8;
-    add r8 r3 into r9;
-    set r9 into deposited[r5];
+    cast r0 r1 into r3 as Pair;
+    get balance[r3] into r4;
+    sub r4 r2 into r5;
+    set r5 into balance[r3];
+    get.or_use deposited[r3] 0u64 into r6;
+    add r6 r2 into r7;
+    set r7 into deposited[r3];
 
 
 function withdraw:
@@ -322,23 +314,20 @@ function withdraw:
     input r1 as u64.private;
     input r2 as privx_account.aleo/Account.record;
     call hash_account_to_field r2 into r3;
-    call default_hash_account self.caller into r4;
 
-    finalize r3 r4 r0 r1;
+    finalize r3 r0 r1;
 
 finalize withdraw:
     input r0 as field.public;
-    input r1 as field.public;
+    input r1 as u64.public;
     input r2 as u64.public;
-    input r3 as u64.public;
-    cast r0 r2 into r4 as Pair;
-    cast r1 r2 into r5 as Pair;
-    get.or_use deposited[r4] 0u64 into r6;
-    sub r6 r3 into r7;
-    set r7 into deposited[r4];
-    get balance[r5] into r8;
-    add r8 r3 into r9;
-    set r9 into balance[r5];
+    cast r0 r1 into r3 as Pair;
+    get.or_use deposited[r3] 0u64 into r4;
+    sub r4 r2 into r5;
+    set r5 into deposited[r3];
+    get balance[r3] into r6;
+    add r6 r2 into r7;
+    set r7 into balance[r3];
 
 
 function buy:
