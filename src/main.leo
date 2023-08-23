@@ -270,11 +270,12 @@ program privx_exchange_beta4.aleo {
         };
 
         let from_current_balance: u64 = Mapping::get_or_use(balance, from_key, 0u64);
-        let to_current_balance: u64 = Mapping::get_or_use(balance, to_key, 0u64);
         from_current_balance = from_current_balance - amount;
+        Mapping::set(balance, from_key, from_current_balance);
+
+        let to_current_balance: u64 = Mapping::get_or_use(balance, to_key, 0u64);
         to_current_balance = to_current_balance + amount;
         
-        Mapping::set(balance, from_key, from_current_balance);
         Mapping::set(balance, to_key, to_current_balance);
     }
     
