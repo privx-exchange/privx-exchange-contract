@@ -34,43 +34,43 @@ struct Setting:
 
 
 mapping balance:
-	key left as Pair.public;
-	value right as u64.public;
+	key as Pair.public;
+	value as u64.public;
 
 
 mapping registry:
-	key left as u64.public;
-	value right as TokenMeta.public;
+	key as u64.public;
+	value as TokenMeta.public;
 
 
 mapping settings:
-	key left as u64.public;
-	value right as Setting.public;
+	key as u64.public;
+	value as Setting.public;
 
 
 mapping deposited:
-	key left as Pair.public;
-	value right as u64.public;
+	key as Pair.public;
+	value as u64.public;
 
 
 mapping locked:
-	key left as Pair.public;
-	value right as u64.public;
+	key as Pair.public;
+	value as u64.public;
 
 
 mapping orders:
-	key left as u64.public;
-	value right as Order.public;
+	key as u64.public;
+	value as Order.public;
 
 
 mapping sequence:
-	key left as u64.public;
-	value right as u64.public;
+	key as u64.public;
+	value as u64.public;
 
 
 mapping price_decimals:
-	key left as u64.public;
-	value right as u8.public;
+	key as u64.public;
+	value as u8.public;
 
 function register_stablecoin:
     input r0 as u128.public;
@@ -78,8 +78,8 @@ function register_stablecoin:
     input r2 as TokenLogo.public;
     input r3 as u64.public;
     assert.eq self.caller aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz;
-
-    finalize self.caller r0 r1 r2 r3;
+    async register_stablecoin self.caller r0 r1 r2 r3 into r4;
+    output r4 as privx_exchange_beta4.aleo/register_stablecoin.future;
 
 finalize register_stablecoin:
     input r0 as address.public;
@@ -98,8 +98,8 @@ function register:
     input r1 as u64.public;
     input r2 as TokenLogo.public;
     input r3 as u64.public;
-
-    finalize self.caller r0 r1 r2 r3;
+    async register self.caller r0 r1 r2 r3 into r4;
+    output r4 as privx_exchange_beta4.aleo/register.future;
 
 finalize register:
     input r0 as address.public;
@@ -119,8 +119,8 @@ finalize register:
 function change_minter:
     input r0 as u64.private;
     input r1 as address.private;
-
-    finalize r0 self.caller r1;
+    async change_minter r0 self.caller r1 into r2;
+    output r2 as privx_exchange_beta4.aleo/change_minter.future;
 
 finalize change_minter:
     input r0 as u64.public;
@@ -135,8 +135,8 @@ finalize change_minter:
 function change_setting:
     input r0 as u64.private;
     input r1 as Setting.private;
-
-    finalize self.caller r0 r1;
+    async change_setting self.caller r0 r1 into r2;
+    output r2 as privx_exchange_beta4.aleo/change_setting.future;
 
 finalize change_setting:
     input r0 as address.public;
@@ -149,8 +149,8 @@ finalize change_setting:
 
 function claim:
     input r0 as u64.public;
-
-    finalize self.caller r0;
+    async claim self.caller r0 into r1;
+    output r1 as privx_exchange_beta4.aleo/claim.future;
 
 finalize claim:
     input r0 as address.public;
@@ -171,8 +171,8 @@ function mint_public:
     input r0 as u64.public;
     input r1 as address.public;
     input r2 as u64.public;
-
-    finalize self.caller r0 r1 r2;
+    async mint_public self.caller r0 r1 r2 into r3;
+    output r3 as privx_exchange_beta4.aleo/mint_public.future;
 
 finalize mint_public:
     input r0 as address.public;
@@ -196,8 +196,8 @@ function transfer_public:
     input r0 as u64.public;
     input r1 as address.public;
     input r2 as u64.public;
-
-    finalize r0 self.caller r1 r2;
+    async transfer_public r0 self.caller r1 r2 into r3;
+    output r3 as privx_exchange_beta4.aleo/transfer_public.future;
 
 finalize transfer_public:
     input r0 as u64.public;
@@ -217,8 +217,8 @@ finalize transfer_public:
 function deposit:
     input r0 as u64.private;
     input r1 as u64.private;
-
-    finalize self.caller r0 r1;
+    async deposit self.caller r0 r1 into r2;
+    output r2 as privx_exchange_beta4.aleo/deposit.future;
 
 finalize deposit:
     input r0 as address.public;
@@ -236,8 +236,8 @@ finalize deposit:
 function withdraw:
     input r0 as u64.private;
     input r1 as u64.private;
-
-    finalize self.caller r0 r1;
+    async withdraw self.caller r0 r1 into r2;
+    output r2 as privx_exchange_beta4.aleo/withdraw.future;
 
 finalize withdraw:
     input r0 as address.public;
@@ -252,6 +252,8 @@ finalize withdraw:
     set r7 into balance[r3];
 
 
+
+
 function buy:
     input r0 as u64.public;
     input r1 as u64.public;
@@ -262,8 +264,8 @@ function buy:
     assert.eq r4 true;
     gt r0 0u64 into r5;
     assert.eq r5 true;
-
-    finalize self.caller r0 r1 r2;
+    async buy self.caller r0 r1 r2 into r6;
+    output r6 as privx_exchange_beta4.aleo/buy.future;
 
 finalize buy:
     input r0 as address.public;
@@ -298,8 +300,8 @@ function sell:
     assert.eq r4 true;
     gt r0 0u64 into r5;
     assert.eq r5 true;
-
-    finalize self.caller r0 r1 r2;
+    async sell self.caller r0 r1 r2 into r6;
+    output r6 as privx_exchange_beta4.aleo/sell.future;
 
 finalize sell:
     input r0 as address.public;
@@ -324,11 +326,15 @@ finalize sell:
     set r15 into orders[r13];
 
 
+
+
+
+
 function knockdown:
     input r0 as u64.public;
     input r1 as u64.public;
-
-    finalize r0 r1;
+    async knockdown r0 r1 into r2;
+    output r2 as privx_exchange_beta4.aleo/knockdown.future;
 
 finalize knockdown:
     input r0 as u64.public;
@@ -383,12 +389,6 @@ finalize knockdown:
     get.or_use deposited[r31] 0u64 into r35;
     add r35 r9 into r36;
     set r36 into deposited[r31];
-
-
-
-
-
-
 
 
 

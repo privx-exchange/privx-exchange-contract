@@ -285,16 +285,7 @@ program privx_exchange_beta4.aleo {
 
         let next_id: u64 = Mapping::get_or_use(sequence, 1u64, 0u64);
         Mapping::set(sequence, 1u64, next_id + 1u64);
-        // let order: Order = new_order(buyer, token_id, token_amount, price, true);
-        let order: Order = Order {
-            placer: buyer,
-            is_buy: true,
-            token_id: token_id,
-            amount: token_amount,
-            dealed_amount: 0u64,
-            price: price,
-            status: 0u8,
-        };
+        let order: Order = new_order(buyer, token_id, token_amount, price, true);
         Mapping::set(orders, next_id, order);
     }
 
@@ -322,16 +313,7 @@ program privx_exchange_beta4.aleo {
 
         let next_id: u64 = Mapping::get_or_use(sequence, 1u64, 0u64);
         Mapping::set(sequence, 1u64, next_id + 1u64);
-        // let order: Order = new_order(seller, token_id, token_amount, price, false);
-        let order: Order = Order {
-            placer: seller,
-            is_buy: false,
-            token_id: token_id,
-            amount: token_amount,
-            dealed_amount: 0u64,
-            price: price,
-            status: 0u8,
-        };
+        let order: Order = new_order(seller, token_id, token_amount, price, false);
         Mapping::set(orders, next_id, order);
     }
 
@@ -402,40 +384,16 @@ program privx_exchange_beta4.aleo {
         // TODO: 1.charge the fee
 
         // 2. Update the order'status
-        // let updated_buy_order: Order = update_order_amount(buy_order, token_amount);
-        let updated_buy_order: Order = Order {
-            placer: buy_order.placer,
-            is_buy: buy_order.is_buy,
-            token_id: buy_order.token_id,
-            amount: buy_order.amount - token_amount,
-            dealed_amount: buy_order.dealed_amount + token_amount,
-            price: buy_order.price,
-            status: 0u8,
-        };
-        // let updated_sell_order: Order = update_order_amount(sell_order, token_amount);
-        let updated_sell_order: Order = Order {
-            placer: sell_order.placer,
-            is_buy: sell_order.is_buy,
-            token_id: sell_order.token_id,
-            amount: sell_order.amount - token_amount,
-            dealed_amount: sell_order.dealed_amount + token_amount,
-            price: sell_order.price,
-            status: 0u8,
-        };
+        let updated_buy_order: Order = update_order_amount(buy_order, token_amount);
+        let updated_sell_order: Order = update_order_amount(sell_order, token_amount);
+
         Mapping::set(orders, buy_id, updated_buy_order);
         Mapping::set(orders, sell_id, updated_sell_order);
 
         // 3. Transfer `usdt` from buyer's locked to seller's deposited
-        // let buyer_usdt_key: Pair = new_pair(0u64, buy_order.placer);
-        let buyer_usdt_key: Pair = Pair {
-            addr: buy_order.placer,
-            token_id: 0u64
-        };
-        // let seller_usdt_key: Pair = new_pair(0u64, sell_order.placer);
-        let seller_usdt_key: Pair = Pair {
-            addr: sell_order.placer,
-            token_id: 0u64
-        };
+        let buyer_usdt_key: Pair = new_pair(0u64, buy_order.placer);
+        let seller_usdt_key: Pair = new_pair(0u64, sell_order.placer);
+        
         let buyer_usdt_locked: u64 = Mapping::get(locked, buyer_usdt_key);
         Mapping::set(locked, buyer_usdt_key, buyer_usdt_locked - max_usdt_amount);
         let seller_usdt_deposited: u64 = Mapping::get_or_use(deposited, seller_usdt_key, 0u64);
@@ -446,14 +404,9 @@ program privx_exchange_beta4.aleo {
         Mapping::set(deposited, buyer_usdt_key, buyer_usdt_deposited + returned_usdt_to_buyer);
 
         // 5. Transfer `token` from seller's locked to buyer's deposited
-        let buyer_token_key: Pair = Pair {
-            addr: buy_order.placer,
-            token_id: buy_order.token_id,
-        };
-        let seller_token_key: Pair = Pair {
-            addr: sell_order.placer,
-            token_id: sell_order.token_id,
-        };
+        let buyer_token_key: Pair = new_pair(buy_order.token_id, buy_order.placer);
+        let seller_token_key: Pair = new_pair(sell_order.token_id, sell_order.placer);
+
         let seller_token_locked: u64 = Mapping::get(locked, seller_token_key);
         Mapping::set(locked, seller_token_key, seller_token_locked - token_amount);
         let buyer_token_deposited: u64 = Mapping::get_or_use(deposited, buyer_token_key, 0u64);
