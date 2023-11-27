@@ -1,4 +1,4 @@
-program privx_exchange_beta4.aleo;
+program privx_exchange_beta5.aleo;
 
 struct Pair:
     addr as address;
@@ -79,7 +79,7 @@ function register_stablecoin:
     input r3 as u64.public;
     assert.eq self.caller aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz;
     async register_stablecoin self.caller r0 r1 r2 r3 into r4;
-    output r4 as privx_exchange_beta4.aleo/register_stablecoin.future;
+    output r4 as privx_exchange_beta5.aleo/register_stablecoin.future;
 
 finalize register_stablecoin:
     input r0 as address.public;
@@ -99,7 +99,7 @@ function register:
     input r2 as TokenLogo.public;
     input r3 as u64.public;
     async register self.caller r0 r1 r2 r3 into r4;
-    output r4 as privx_exchange_beta4.aleo/register.future;
+    output r4 as privx_exchange_beta5.aleo/register.future;
 
 finalize register:
     input r0 as address.public;
@@ -120,7 +120,7 @@ function change_minter:
     input r0 as u64.private;
     input r1 as address.private;
     async change_minter r0 self.caller r1 into r2;
-    output r2 as privx_exchange_beta4.aleo/change_minter.future;
+    output r2 as privx_exchange_beta5.aleo/change_minter.future;
 
 finalize change_minter:
     input r0 as u64.public;
@@ -136,7 +136,7 @@ function change_setting:
     input r0 as u64.private;
     input r1 as Setting.private;
     async change_setting self.caller r0 r1 into r2;
-    output r2 as privx_exchange_beta4.aleo/change_setting.future;
+    output r2 as privx_exchange_beta5.aleo/change_setting.future;
 
 finalize change_setting:
     input r0 as address.public;
@@ -150,7 +150,7 @@ finalize change_setting:
 function claim:
     input r0 as u64.public;
     async claim self.caller r0 into r1;
-    output r1 as privx_exchange_beta4.aleo/claim.future;
+    output r1 as privx_exchange_beta5.aleo/claim.future;
 
 finalize claim:
     input r0 as address.public;
@@ -172,7 +172,7 @@ function mint_public:
     input r1 as address.public;
     input r2 as u64.public;
     async mint_public self.caller r0 r1 r2 into r3;
-    output r3 as privx_exchange_beta4.aleo/mint_public.future;
+    output r3 as privx_exchange_beta5.aleo/mint_public.future;
 
 finalize mint_public:
     input r0 as address.public;
@@ -197,7 +197,7 @@ function transfer_public:
     input r1 as address.public;
     input r2 as u64.public;
     async transfer_public r0 self.caller r1 r2 into r3;
-    output r3 as privx_exchange_beta4.aleo/transfer_public.future;
+    output r3 as privx_exchange_beta5.aleo/transfer_public.future;
 
 finalize transfer_public:
     input r0 as u64.public;
@@ -218,7 +218,7 @@ function deposit:
     input r0 as u64.private;
     input r1 as u64.private;
     async deposit self.caller r0 r1 into r2;
-    output r2 as privx_exchange_beta4.aleo/deposit.future;
+    output r2 as privx_exchange_beta5.aleo/deposit.future;
 
 finalize deposit:
     input r0 as address.public;
@@ -237,7 +237,7 @@ function withdraw:
     input r0 as u64.private;
     input r1 as u64.private;
     async withdraw self.caller r0 r1 into r2;
-    output r2 as privx_exchange_beta4.aleo/withdraw.future;
+    output r2 as privx_exchange_beta5.aleo/withdraw.future;
 
 finalize withdraw:
     input r0 as address.public;
@@ -265,7 +265,7 @@ function buy:
     gt r0 0u64 into r5;
     assert.eq r5 true;
     async buy self.caller r0 r1 r2 into r6;
-    output r6 as privx_exchange_beta4.aleo/buy.future;
+    output r6 as privx_exchange_beta5.aleo/buy.future;
 
 finalize buy:
     input r0 as address.public;
@@ -301,7 +301,7 @@ function sell:
     gt r0 0u64 into r5;
     assert.eq r5 true;
     async sell self.caller r0 r1 r2 into r6;
-    output r6 as privx_exchange_beta4.aleo/sell.future;
+    output r6 as privx_exchange_beta5.aleo/sell.future;
 
 finalize sell:
     input r0 as address.public;
@@ -334,7 +334,7 @@ function knockdown:
     input r0 as u64.public;
     input r1 as u64.public;
     async knockdown r0 r1 into r2;
-    output r2 as privx_exchange_beta4.aleo/knockdown.future;
+    output r2 as privx_exchange_beta5.aleo/knockdown.future;
 
 finalize knockdown:
     input r0 as u64.public;

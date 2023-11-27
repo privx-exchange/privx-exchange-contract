@@ -1,5 +1,5 @@
 // The 'privx_exchange' program.
-program privx_exchange_beta4.aleo {
+program privx_exchange_beta5.aleo {
     struct Pair {
         addr: address,
         token_id: u64,
@@ -63,10 +63,11 @@ program privx_exchange_beta4.aleo {
 
     // price decimal
     mapping price_decimals: u64 => u8;
+    const CONTRACT_OWNER: address = aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz;
 
     // TokenId = 0 is the stablecoin to trade.
     transition register_stablecoin(public token_name: u128, public token_symbol: u64, public token_logo: TokenLogo, public max_supply: u64) {
-        assert_eq(self.caller, aleo1pwr596ea2h328m970pgdu2z0y2hszfjr28x9p2d80haxwgca0q9sderecz);
+        assert_eq(self.caller, CONTRACT_OWNER);
         return then finalize(self.caller, token_name, token_symbol, token_logo, max_supply);
     }
     finalize register_stablecoin(caller: address, token_name: u128, token_symbol: u64, token_logo: TokenLogo, max_supply: u64) {
